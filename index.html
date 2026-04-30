@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Blasto</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game"></canvas>
+        <div id="hud">
+            <div id="player-info" class="hud-item clickable">
+                <span class="label">PLAYER</span>
+                <span id="player-name-display">Player 1</span>
+            </div>
+            <div class="hud-item">
+                <span class="label">PTS</span>
+                <span id="score">0</span>
+            </div>
+            <div class="hud-item">
+                <span class="label">HIGH</span>
+                <span id="high">0</span>
+            </div>
+        </div>
+        <div id="powerup-indicator"></div>
+        <div id="start-screen">
+            <input type="text" id="player-name-input" value="Player 1" maxlength="12" autocomplete="off">
+            <h1>BLASTO</h1>
+            <p>Tap to Start</p>
+        </div>
+        <div id="game-over-screen" style="display: none;">
+            <h1>GAME OVER</h1>
+            <p id="final-score">Score: 0</p>
+            <p>Tap to Restart</p>
+        </div>
+        <div id="pause-screen" class="hidden">
+            <h1>PAUSED</h1>
+            <p>Tap to Resume</p>
+        </div>
+    </div>
+    <script src="js/powerup.js"></script>
+    <script src="js/asteroid.js"></script>
+    <script src="js/boss.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
