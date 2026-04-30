@@ -97,6 +97,25 @@ body {
     outline: none;
 }
 
+#how-to-play-btn {
+    margin-top: 30px;
+    background: transparent;
+    border: 2px solid var(--ship);
+    color: var(--text);
+    font-size: 16px;
+    padding: 14px 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+#how-to-play-btn:hover {
+    background: var(--ship);
+    color: var(--panel);
+}
+
 #player-name-input:focus {
     border-bottom-color: var(--flame);
 }
@@ -170,7 +189,8 @@ body {
 
 #start-screen,
 #game-over-screen,
-#pause-screen {
+#pause-screen,
+#instructions-screen {
     position: fixed;
     top: 0;
     left: 0;
@@ -180,7 +200,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: rgba(11, 16, 23, 0.9);
+    background: rgba(11, 16, 23, 0.95);
     color: var(--text);
     z-index: 100;
     cursor: pointer;
@@ -200,6 +220,89 @@ body {
 #pause-screen p {
     font-size: 18px;
     opacity: 0.8;
+}
+
+#instructions-screen {
+    cursor: default;
+}
+
+#start-screen h1,
+#start-screen p {
+    cursor: pointer;
+}
+
+#instructions-screen h1 {
+    font-size: 36px;
+    letter-spacing: 4px;
+    margin-bottom: 40px;
+    text-shadow: 0 0 30px var(--ship);
+}
+
+.instructions-controls {
+    text-align: center;
+    margin-bottom: 50px;
+    padding: 0 20px;
+}
+
+.instructions-controls p {
+    font-size: 20px;
+    opacity: 0.85;
+    margin: 12px 0;
+    font-weight: 500;
+}
+
+.instructions-powerups {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
+    margin-bottom: 50px;
+    padding: 0 20px;
+    max-width: 600px;
+    width: 100%;
+}
+
+.powerup-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.powerup-icon-only {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.powerup-label {
+    font-size: 11px;
+    opacity: 0.9;
+    text-align: center;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#instructions-back-btn {
+    background: transparent;
+    border: 2px solid var(--ship);
+    color: var(--text);
+    font-size: 18px;
+    padding: 12px 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#instructions-back-btn:hover {
+    background: var(--ship);
+    color: var(--panel);
 }
 
 #game-over-screen h1 {

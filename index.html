@@ -28,6 +28,7 @@
             <input type="text" id="player-name-input" value="Player 1" maxlength="12" autocomplete="off">
             <h1>BLASTO</h1>
             <p>Tap to Start</p>
+            <button id="how-to-play-btn">How to Play</button>
         </div>
         <div id="game-over-screen" class="hidden">
             <h1>GAME OVER</h1>
@@ -38,6 +39,37 @@
         <div id="pause-screen" class="hidden">
             <h1>PAUSED</h1>
             <p>Tap to Resume</p>
+        </div>
+        <div id="instructions-screen" class="hidden">
+            <h1>HOW TO PLAY</h1>
+            <div class="instructions-controls">
+                <p>Full screen scrolling left to right</p>
+                <p>You lose against asteroids and enemies</p>
+                <p>Tap "Player 1" to change your name</p>
+            </div>
+            <div class="instructions-powerups">
+                <div class="powerup-item">
+                    <span class="powerup-icon-only">⚡</span>
+                    <span class="powerup-label">Triple Shot</span>
+                </div>
+                <div class="powerup-item">
+                    <span class="powerup-icon-only">🚀</span>
+                    <span class="powerup-label">High Damage</span>
+                </div>
+                <div class="powerup-item">
+                    <span class="powerup-icon-only">🛡</span>
+                    <span class="powerup-label">Invulnerable</span>
+                </div>
+                <div class="powerup-item">
+                    <span class="powerup-icon-only">❄</span>
+                    <span class="powerup-label">Slow Asteroids</span>
+                </div>
+                <div class="powerup-item">
+                    <span class="powerup-icon-only">❤</span>
+                    <span class="powerup-label">Extra Life</span>
+                </div>
+            </div>
+            <button id="instructions-back-btn">Back</button>
         </div>
     </div>
     <script src="js/powerup.min.js"></script>

@@ -15,6 +15,9 @@ class Game {
         this.startScreen = document.getElementById('start-screen');
         this.gameOverScreen = document.getElementById('game-over-screen');
         this.pauseScreen = document.getElementById('pause-screen');
+        this.instructionsScreen = document.getElementById('instructions-screen');
+        this.instructionsBackBtn = document.getElementById('instructions-back-btn');
+        this.howToPlayBtn = document.getElementById('how-to-play-btn');
         this.playerInfo = document.getElementById('player-info');
         this.playerNameDisplay = document.getElementById('player-name-display');
         this.playerNameInput = document.getElementById('player-name-input');
@@ -91,12 +94,12 @@ class Game {
         });
 
         this.startScreen.addEventListener('click', (e) => {
-            if (e.target.tagName === 'INPUT') return;
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
             if (this.state === 'start') this.startGame();
         });
 
         this.startScreen.addEventListener('touchstart', (e) => {
-            if (e.target.tagName === 'INPUT') return;
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
             e.preventDefault();
             if (this.state === 'start') this.startGame();
         }, { passive: false });
@@ -124,6 +127,17 @@ class Game {
             }
         }, { passive: false });
 
+        this.instructionsBackBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.hideInstructions();
+        });
+
+        this.instructionsBackBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.hideInstructions();
+        }, { passive: false });
+
         this.pauseScreen.addEventListener('click', () => {
             if (this.state === 'paused') this.togglePause();
         });
@@ -131,6 +145,17 @@ class Game {
         this.pauseScreen.addEventListener('touchstart', (e) => {
             e.preventDefault();
             if (this.state === 'paused') this.togglePause();
+        }, { passive: false });
+
+        this.howToPlayBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.showInstructions();
+        });
+
+        this.howToPlayBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.showInstructions();
         }, { passive: false });
 
         this.canvas.addEventListener('mousemove', (e) => {
@@ -159,6 +184,14 @@ class Game {
             this.pauseScreen.classList.add('hidden');
             this.playerInfo.classList.remove('paused');
         }
+    }
+
+    showInstructions() {
+        this.instructionsScreen.classList.remove('hidden');
+    }
+
+    hideInstructions() {
+        this.instructionsScreen.classList.add('hidden');
     }
 
     init() {
