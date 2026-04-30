@@ -209,7 +209,7 @@ class Game {
         this.startScreen.classList.add('hidden');
         this.gameOverScreen.classList.add('hidden');
 
-        this.player = new Player(this.canvas.width / 2, this.canvas.height - 80);
+        this.player = new Player(this.canvas.width / 2, this.canvas.height - 150);
         this.asteroidManager = new AsteroidManager();
         this.bossManager = new BossManager();
         this.powerUpManager = new PowerUpManager();
