@@ -15,11 +15,11 @@
 ### Niveles de Asteroides
 | Color | Puntos | HP (disparos) | Velocidad (px/s) | Velocidad congelado |
 |-------|--------|---------------|------------------|---------------------|
-| Verde claro | 15 | 1 | 80-120 | 40-60 |
-| Verde obscuro | 30 | 2 | 70-100 | 35-50 |
-| Azul | 60 | 4 | 60-90 | 30-45 |
-| Morado | 120 | 8 | 50-80 | 25-40 |
-| Rojo | 240 | 16 | 40-60 | 20-30 |
+| Verde claro | 15 | 6 | 80-120 | 40-60 |
+| Verde obscuro | 30 | 12 | 70-100 | 35-50 |
+| Azul | 60 | 24 | 60-90 | 30-45 |
+| Morado | 120 | 48 | 50-80 | 25-40 |
+| Rojo | 240 | 96 | 40-60 | 20-30 |
 
 ### Spawn de Asteroides
 - Inicio: 2 asteroides (1 izq, 1 der)
@@ -29,11 +29,11 @@
 
 ### Sistema de Split (División)
 Al destruir un asteroide, se divide en 2 del siguiente nivel inferior:
-- Verde claro (1HP) → NO se divide (es el más pequeño)
-- Verde obscuro (2HP) → 2 × Verde claro
-- Azul (4HP) → 2 × Verde obscuro
-- Morado (8HP) → 2 × Azul
-- Rojo (16HP) → 2 × Morado
+- Verde claro (6HP) → NO se divide (es el más pequeño)
+- Verde obscuro (12HP) → 2 × Verde claro
+- Azul (24HP) → 2 × Verde obscuro
+- Morado (48HP) → 2 × Azul
+- Rojo (96HP) → 2 × Morado
 
 ## Jefes Finales
 | Parámetro | Valor |
@@ -42,8 +42,8 @@ Al destruir un asteroide, se divide en 2 del siguiente nivel inferior:
 | Puntos al destruir | 350 |
 | HP | 350 (35 impactos de 10 daño) |
 | Velocidad movimiento | 100 px/s (izq → der) |
-| Disparos | 200 px/s cada 2 segundos |
-| Tiempo para matar (solo normal) | 7 segundos |
+| Disparos | 225 px/s cada 0.6 segundos |
+| Tiempo para matar (solo normal) | 3.5 segundos |
 
 ## Sistema de Power-ups
 
@@ -87,11 +87,11 @@ Todos los power-ups (excepto vida que aparece a los 150pts) requieren **7 dispar
 
 ### Sin power-ups
 - Disparos normales: 60 DPS (6/s × 10 daño)
-- Verde claro (1HP): 0.17s para destruir
-- Verde obscuro (2HP): 0.33s
-- Azul (4HP): 0.67s
-- Morado (8HP): 1.33s
-- Rojo (16HP): 2.67s
+- Verde claro (6HP): 1s para destruir
+- Verde obscuro (12HP): 2s
+- Azul (24HP): 4s
+- Morado (48HP): 8s
+- Rojo (96HP): 16s
 - Jefe (35HP): 5.8s
 
 ### Con Power-ups
@@ -125,4 +125,4 @@ Cuando un power-up con duración está activo:
 |-------|-------------|
 | 28/04/2026 | Versión inicial del balance |
 | 29/04/2026 | Freeze solo afecta asteroides; Vida no hace respawn, solo consume protección; Indicador visual con sombra sin texto |
-| 30/04/2026 | Jugador dispara solo hacia arriba; Velocidad 250px/s; Cadencia 6/s; Power-ups requieren 7 disparos para activar |
+| 30/04/2026 | Jugador dispara solo hacia arriba; Velocidad 250px/s; Cadencia 6/s; Power-ups requieren 7 disparos para activar; Boss: 1s fire interval, 225 bullet speed; Asteroides HP: 4/8/16/32/64 |

@@ -205,6 +205,8 @@ body {
 #game-over-screen h1 {
     color: var(--bullet);
     text-shadow: 0 0 30px var(--bullet);
+    text-align: center;
+    width: 100%;
 }
 
 #pause-screen h1 {

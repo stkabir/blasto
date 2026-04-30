@@ -22,6 +22,7 @@ class Game {
 
         this.playerName = localStorage.getItem('blasto_playerName') || 'Player 1';
         this.playerNameDisplay.textContent = this.playerName;
+        this.playerNameInput.value = this.playerName;
 
         this.resize();
         window.addEventListener('resize', () => this.resize());
@@ -316,7 +317,7 @@ class Game {
                     continue;
                 }
                 if (this.powerUpManager.hasActive('life')) {
-                    this.powerUpManager.activePowerUps.life = false;
+                    delete this.powerUpManager.activePowerUps.life;
                     return;
                 }
                 this.gameOver();
@@ -329,7 +330,7 @@ class Game {
                 return;
             }
             if (this.powerUpManager.hasActive('life')) {
-                this.powerUpManager.activePowerUps.life = false;
+                delete this.powerUpManager.activePowerUps.life;
                 return;
             }
             this.gameOver();
@@ -396,7 +397,9 @@ class Game {
             this.high = this.score;
             localStorage.setItem('blasto_high', this.high.toString());
         }
-        this.finalScoreEl.textContent = `${this.playerName}: ${this.score}`;
+        document.getElementById('final-score-name').textContent = this.playerName;
+        this.finalScoreEl.textContent = `${this.score}`;
+        this.gameOverScreen.style.display = '';
         this.gameOverScreen.classList.remove('hidden');
         this.highEl.textContent = this.high;
         this.playerInfo.classList.remove('paused');
@@ -429,26 +432,6 @@ updatePowerUpIndicator() {
 
             this.powerupIndicator.appendChild(div);
         }
-    }
-
-    update(dt) {
-        if (this.state !== 'playing') return;
-
-        const frozen = this.powerUpManager.hasActive('freeze');
-
-        this.player.update(dt, this.keys);
-        this.asteroidManager.update(dt, frozen, this.score);
-        this.bossManager.update(dt);
-        this.powerUpManager.update(dt);
-        this.powerUpManager.updateActive(dt);
-        this.asteroidManager.trySpawn(this.score);
-
-        this.updateRockets(dt);
-        this.checkCollisions();
-
-        this.powerUpManager.trySpawnPowerUp(this.score);
-        this.bossManager.trySpawn(this.score);
-        this.updatePowerUpIndicator();
     }
 
     loop(timestamp) {

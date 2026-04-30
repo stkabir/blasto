@@ -4,8 +4,8 @@ const BOSS_CONFIG = {
     pointsToAppear: 300,
     pointsReward: 350,
     speed: 100,
-    bulletSpeed: 200,
-    fireInterval: 2000,
+    bulletSpeed: 225,
+    fireInterval: 600,
     width: 80,
     height: 60
 };

@@ -1,11 +1,11 @@
 "use strict";
 
 const ASTEROID_TYPES = {
-    LIGHT: { level: 1, color: '#84cc16', hp: 1, points: 15, minSpeed: 80, maxSpeed: 120, radius: 15 },
-    MED: { level: 2, color: '#15803d', hp: 2, points: 30, minSpeed: 70, maxSpeed: 100, radius: 22 },
-    BLUE: { level: 3, color: '#3b82f6', hp: 4, points: 60, minSpeed: 60, maxSpeed: 90, radius: 30 },
-    PURPLE: { level: 4, color: '#a855f7', hp: 8, points: 120, minSpeed: 50, maxSpeed: 80, radius: 38 },
-    RED: { level: 5, color: '#ef4444', hp: 16, points: 240, minSpeed: 40, maxSpeed: 60, radius: 46 }
+    LIGHT: { level: 1, color: '#84cc16', hp: 6, points: 15, minSpeed: 80, maxSpeed: 120, radius: 15 },
+    MED: { level: 2, color: '#15803d', hp: 12, points: 30, minSpeed: 70, maxSpeed: 100, radius: 22 },
+    BLUE: { level: 3, color: '#3b82f6', hp: 24, points: 60, minSpeed: 60, maxSpeed: 90, radius: 30 },
+    PURPLE: { level: 4, color: '#a855f7', hp: 48, points: 120, minSpeed: 50, maxSpeed: 80, radius: 38 },
+    RED: { level: 5, color: '#ef4444', hp: 96, points: 240, minSpeed: 40, maxSpeed: 60, radius: 46 }
 };
 
 const SPLIT_MAP = {
@@ -29,7 +29,7 @@ class Asteroid {
             this.vy = vy;
         } else {
             const speed = this.type.minSpeed + Math.random() * (this.type.maxSpeed - this.type.minSpeed);
-            const angle = Math.random() * Math.PI * 0.5 + Math.PI * 0.25;
+            const angle = Math.random() * Math.PI * 0.2 + Math.PI * 0.4;
             this.vx = Math.cos(angle) * speed * (x < window.innerWidth / 2 ? 1 : -1);
             this.vy = Math.sin(angle) * speed;
         }

@@ -13,6 +13,7 @@ Blasto es un juego arcade de tipo shooter para iOS. El jugador controla una nave
 - Sistema de pausa (tap en nombre del jugador)
 - Sistema de vida (protección que se consume al recibir daño)
 - Nombre del jugador editable en pantalla inicial
+- Persistencia del nombre del jugador en localStorage
 
 ## Estructura del Proyecto
 ```
@@ -46,15 +47,16 @@ blasto/
 - Input para nombre del jugador (default: "Player 1", máximo 12 caracteres)
 - Título "BLASTO"
 - "Tap to Start"
+- El nombre se guarda en localStorage y se restaura al recargar
 
 ## HUD (Durante el juego)
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  PLAYER          PTS           HIGH                         │
-│  Player 1 ⏸    0             255                           │
+│  kabir ⏸       1250          4005                           │
 └─────────────────────────────────────────────────────────────┘
 ```
-- Tap en "Player 1 ⏸" para pausar
+- Tap en "kabir ⏸" para pausar
 - Cuando está pausado, el icono cambia a "▶"
 
 ## Gameplay Loop
@@ -81,7 +83,7 @@ Los power-ups aparecen como asteroides transparentes con iconos. Requieren **7 d
 - **Start**: Pantalla de inicio con input de nombre, título "BLASTO", "Tap to Start"
 - **Playing**: Gameplay activo con HUD (PLAYER, PTS, HIGH)
 - **Paused**: Overlay "PAUSED - Tap to Resume"
-- **Game Over**: "Game Over - Player 1: Score - Tap to Restart"
+- **Game Over**: Título "GAME OVER" centrado, nombre en línea propia, score en otra línea, "Tap to Restart"
 
 ## Indicadores de Power-up
 Cuando un power-up con duración está activo, aparece un icono en la parte inferior de la pantalla. El icono tiene una sombra oscura que crece desde afuera hacia adentro representando el tiempo restante (sin texto de segundos).
@@ -94,7 +96,7 @@ Cuando un power-up con duración está activo, aparece un icono en la parte infe
 - Velocidad de balas: 200 px/s
 
 ## Persistencia
-- Nombre del jugador: `localStorage.setItem('blasto_playerName', name)`
+- Nombre del jugador: `localStorage.setItem('blasto_playerName', name)` y se restaura al recargar sincronizando con el input
 - High score: `localStorage.setItem('blasto_high', score)`
 
 ## Historial de Desarrollo
@@ -103,3 +105,4 @@ Cuando un power-up con duración está activo, aparece un icono en la parte infe
 | 28/04/2026 | Versión inicial - concepto y balance |
 | 29/04/2026 | Implementación de power-ups, pausa, indicadores visuales |
 | 30/04/2026 | Jugador dispara solo hacia arriba; Velocidad 250px/s; Cadencia 6/s; Power-ups requieren 7 disparos para activar; Nombre del jugador editable en start screen |
+| 01/05/2026 | Fix: nombre de jugador se sincroniza con input al recargar; Game Over muestra nombre y score separados en líneas diferentes |
