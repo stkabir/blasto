@@ -1,7 +1,7 @@
 "use strict";
 
 const PLAYER_CONFIG = {
-    speed: 250,
+    speed: 350,
     radius: 18,
     fireRate: 167,
     bulletSpeed: 500,
@@ -92,7 +92,7 @@ class Player {
             x: this.x,
             y: this.y,
             target: largest,
-            speed: 350,
+speed: 400,
             damage: 200,
             radius: 8
         };

@@ -105,13 +105,13 @@ class Asteroid {
         const children = [];
         const speed = 80 + Math.random() * 60;
         const baseAngle = this.vy >= 0 ? 0 : Math.PI;
-        const spread = Math.PI * 0.3;
+        const spread = Math.PI * 0.15;
 
-        const angle1 = baseAngle - spread / 2 + Math.random() * Math.PI * 0.2;
-        const angle2 = baseAngle + spread / 2 + Math.random() * Math.PI * 0.2;
+        const angle1 = baseAngle - spread / 2 + Math.random() * Math.PI * 0.1;
+        const angle2 = baseAngle + spread / 2 + Math.random() * Math.PI * 0.1;
 
-        children.push(new Asteroid(this.x, this.y, nextType, Math.cos(angle1) * speed, Math.abs(Math.sin(angle1)) * speed * 0.7));
-        children.push(new Asteroid(this.x, this.y, nextType, Math.cos(angle2) * speed, Math.abs(Math.sin(angle2)) * speed * 0.7));
+        children.push(new Asteroid(this.x, this.y, nextType, Math.cos(angle1) * speed * 0.25, Math.abs(Math.sin(angle1)) * speed));
+        children.push(new Asteroid(this.x, this.y, nextType, Math.cos(angle2) * speed * 0.25, Math.abs(Math.sin(angle2)) * speed));
 
         return children;
     }
