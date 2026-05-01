@@ -105,4 +105,4 @@ Cuando un power-up con duración está activo, aparece un icono en la parte infe
 | 28/04/2026 | Versión inicial - concepto y balance |
 | 29/04/2026 | Implementación de power-ups, pausa, indicadores visuales |
 | 30/04/2026 | Jugador dispara solo hacia arriba; Velocidad 250px/s; Cadencia 6/s; Power-ups requieren 7 disparos para activar; Nombre del jugador editable en start screen |
-| 01/05/2026 | Fix: nombre de jugador se sincroniza con input al recargar; Game Over muestra nombre y score separados en líneas diferentes |
+| 01/05/2026 | Fix: nombre de jugador se sincroniza con input al recargar; Game Over muestra nombre y score separados en líneas diferentes; Velocidad jugador 400px/s; Asteroides spawnean desde arriba hacia el centro; Split: 80% vertical 20% horizontal con mayor apertura |

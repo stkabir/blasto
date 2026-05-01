@@ -104,14 +104,11 @@ class Asteroid {
 
         const children = [];
         const speed = 80 + Math.random() * 60;
-        const baseAngle = this.vy >= 0 ? 0 : Math.PI;
-        const spread = Math.PI * 0.15;
+        const verticalSpeed = speed * (0.8 + Math.random() * 0.2);
+        const horizontalSpeed = speed * 0.5;
 
-        const angle1 = baseAngle - spread / 2 + Math.random() * Math.PI * 0.1;
-        const angle2 = baseAngle + spread / 2 + Math.random() * Math.PI * 0.1;
-
-        children.push(new Asteroid(this.x, this.y, nextType, Math.cos(angle1) * speed * 0.25, Math.abs(Math.sin(angle1)) * speed));
-        children.push(new Asteroid(this.x, this.y, nextType, Math.cos(angle2) * speed * 0.25, Math.abs(Math.sin(angle2)) * speed));
+        children.push(new Asteroid(this.x, this.y, nextType, -horizontalSpeed * Math.random(), verticalSpeed));
+        children.push(new Asteroid(this.x, this.y, nextType, horizontalSpeed * Math.random(), verticalSpeed));
 
         return children;
     }
@@ -158,27 +155,27 @@ class AsteroidManager {
         const leftType = this.getRandomTypeForScore(0);
         const rightType = this.getRandomTypeForScore(0);
 
-        const leftAsteroid = new Asteroid(-30, 100, leftType);
-        leftAsteroid.vx = Math.abs(leftAsteroid.vx);
+        const leftAsteroid = new Asteroid(window.innerWidth * 0.25, -30, leftType);
+        const rightAsteroid = new Asteroid(window.innerWidth * 0.75, -30, rightType);
 
-        const rightAsteroid = new Asteroid(window.innerWidth + 30, 100, rightType);
-        rightAsteroid.vx = -Math.abs(rightAsteroid.vx);
+        const centerX = window.innerWidth / 2;
+        leftAsteroid.vx = (centerX - leftAsteroid.x) * 0.015;
+        leftAsteroid.vy = 60 + Math.random() * 40;
+        rightAsteroid.vx = (centerX - rightAsteroid.x) * 0.015;
+        rightAsteroid.vy = 60 + Math.random() * 40;
 
         this.asteroids.push(leftAsteroid, rightAsteroid);
     }
 
     spawn() {
-        const side = Math.random() > 0.5 ? 0 : 1;
-        const x = side === 0 ? -30 : window.innerWidth + 30;
+        const x = Math.random() * window.innerWidth;
         const y = -30 - Math.random() * 100;
         const type = this.getRandomTypeForScore(window.gameScore || 0);
 
         const asteroid = new Asteroid(x, y, type);
-        if (side === 0) {
-            asteroid.vx = Math.abs(asteroid.vx);
-        } else {
-            asteroid.vx = -Math.abs(asteroid.vx);
-        }
+        const centerX = window.innerWidth / 2;
+        asteroid.vx = (centerX - x) * 0.02 + (Math.random() - 0.5) * 30;
+        asteroid.vy = Math.abs(asteroid.vy) || 60 + Math.random() * 40;
 
         this.asteroids.push(asteroid);
     }

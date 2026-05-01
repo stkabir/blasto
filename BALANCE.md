@@ -5,7 +5,7 @@
 |-----------|-------|
 | Cadencia de disparo | 6 por segundo |
 | Daño por impacto | 10 |
-| Velocidad de movimiento | 250 px/s |
+| Velocidad de movimiento | 400 px/s |
 | Posición inicial | Centro-abajo |
 | Apuntado | Solo hacia arriba (sin mira) |
 | Movimiento | Solo izquierda/derecha |
@@ -22,8 +22,9 @@
 | Rojo | 240 | 96 | 40-60 | 20-30 |
 
 ### Spawn de Asteroides
-- Inicio: 2 asteroides (1 izq, 1 der)
+- Inicio: 2 asteroides desde arriba (25% y 75% del ancho), cayendo hacia el centro
 - Frecuencia inicial: cada 2 segundos
+- Spawwn continuo: posición horizontal aleatoria, dirección hacia el centro
 - Rojos aparecen: a los 200 puntos
 - Progresión: más asteroides y más rápidos con el tiempo
 
@@ -34,6 +35,11 @@ Al destruir un asteroide, se divide en 2 del siguiente nivel inferior:
 - Azul (24HP) → 2 × Verde obscuro
 - Morado (48HP) → 2 × Azul
 - Rojo (96HP) → 2 × Morado
+
+**Física del split:**
+- Velocidad vertical: 80-100% de la velocidad base (hacia abajo)
+- Velocidad horizontal: 50% de la velocidad base (hacia los lados)
+- Los dos hijos se abren en direcciones opuestas (±vx aleatorio)
 
 ## Jefes Finales
 | Parámetro | Valor |
@@ -126,3 +132,4 @@ Cuando un power-up con duración está activo:
 | 28/04/2026 | Versión inicial del balance |
 | 29/04/2026 | Freeze solo afecta asteroides; Vida no hace respawn, solo consume protección; Indicador visual con sombra sin texto |
 | 30/04/2026 | Jugador dispara solo hacia arriba; Velocidad 250px/s; Cadencia 6/s; Power-ups requieren 7 disparos para activar; Boss: 1s fire interval, 225 bullet speed; Asteroides HP: 4/8/16/32/64 |
+| 01/05/2026 | Velocidad jugador 400px/s; Asteroides spawnean desde arriba hacia el centro; Split: 80% vertical 20% horizontal con mayor apertura (horizontalSpeed = 50% de speed) |
