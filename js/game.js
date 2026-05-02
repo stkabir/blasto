@@ -488,6 +488,14 @@ class Game {
         this.gameOverScreen.classList.remove('hidden');
         this.highEl.textContent = this.high;
         this.playerInfo.classList.remove('paused');
+
+        this.powerUpManager.activePowerUps = {};
+        for (const id in this.powerUpIcons) {
+            if (this.powerUpIcons[id].parentNode) {
+                this.powerUpIcons[id].parentNode.removeChild(this.powerUpIcons[id]);
+            }
+        }
+        this.powerUpIcons = {};
     }
 
     updateHUD() {
