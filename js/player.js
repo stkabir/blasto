@@ -3,9 +3,9 @@
 const PLAYER_CONFIG = {
     speed: 350,
     radius: 18,
-    fireRate: 167,
+    fireRate: 33,
     bulletSpeed: 500,
-    bulletDamage: 10
+    bulletDamage: 1
 };
 
 class Player {
@@ -59,7 +59,7 @@ class Player {
             y: this.y,
             vx,
             vy,
-            radius: 4
+            radius: 8
         });
     }
 
@@ -79,12 +79,12 @@ class Player {
                 y: this.y,
                 vx,
                 vy,
-                radius: 3
+                radius: 6
             });
         }
     }
 
-    fireRocket() {
+fireRocket() {
         const largest = window.asteroidManager?.getLargestAsteroid();
         if (!largest) return null;
 
@@ -92,8 +92,8 @@ class Player {
             x: this.x,
             y: this.y,
             target: largest,
-speed: 400,
-            damage: 200,
+            speed: 400,
+            damage: largest.hp,
             radius: 8
         };
     }

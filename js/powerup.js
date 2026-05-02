@@ -1,14 +1,14 @@
 "use strict";
 
 const POWERUP_TYPES = {
-    TRIPLE: { id: 'triple', name: 'Triple', duration: 8000, color: '#22d3ee', icon: '⚡' },
+    TRIPLE: { id: 'triple', name: 'Triple', duration: 10000, color: '#22d3ee', icon: '⚡' },
     ROCKET: { id: 'rocket', name: 'Rocket', duration: 0, color: '#f59e0b', icon: '🚀' },
-    SHIELD: { id: 'shield', name: 'Shield', duration: 7000, color: '#34d399', icon: '🛡' },
-    FREEZE: { id: 'freeze', name: 'Freeze', duration: 7000, color: '#a78bfa', icon: '❄' },
+    SHIELD: { id: 'shield', name: 'Shield', duration: 10000, color: '#34d399', icon: '🛡' },
+    FREEZE: { id: 'freeze', name: 'Freeze', duration: 8000, color: '#a78bfa', icon: '❄' },
     LIFE: { id: 'life', name: 'Life', duration: 0, color: '#ef4444', icon: '❤' }
 };
 
-const POWERUP_SPAWN_SCORE = 50;
+const POWERUP_SPAWN_SCORE = 70;
 const POWERUP_LIFE_SCORE = 150;
 const POWERUP_LIFE_CHANCE = 0.12;
 const POWERUP_REGULAR_CHANCE = 0.25;
@@ -23,15 +23,13 @@ class PowerUp {
         this.radius = 20;
         this.active = true;
         this.speed = 60;
-        this.angle = Math.random() * Math.PI * 0.5 + Math.PI * 0.25;
-        this.horizontalSpeed = (Math.random() > 0.5 ? 1 : -1) * 30;
+        this.angle = Math.PI / 2;
         this.hp = POWERUP_HP;
     }
 
     update(dt, frozen) {
         const speedMod = frozen ? 0.5 : 1;
         this.y += Math.sin(this.angle) * this.speed * speedMod * dt;
-        this.x += this.horizontalSpeed * speedMod * dt;
     }
 
     draw(ctx) {
@@ -118,8 +116,7 @@ class PowerUpManager {
     }
 
     spawn(type) {
-        const side = Math.random() > 0.5 ? 0 : 1;
-        const x = side === 0 ? 50 : window.innerWidth - 50;
+        const x = Math.random() * (window.innerWidth - 100) + 50;
         const y = -30;
         const powerup = new PowerUp(x, y, type);
         this.powerups.push(powerup);
@@ -127,16 +124,21 @@ class PowerUpManager {
 
     activate(type) {
         if (type.id === 'life') {
-            this.activePowerUps.life = true;
+            this.activePowerUps.life = { type, remaining: Infinity, maxDuration: Infinity };
             return;
         }
 
-        this.activePowerUps[type.id] = {
-            type: type,
-            remaining: type.duration,
-            startTime: Date.now(),
-            maxDuration: type.duration
-        };
+        if (this.activePowerUps[type.id]) {
+            this.activePowerUps[type.id].remaining = type.duration;
+            this.activePowerUps[type.id].maxDuration = type.duration;
+        } else {
+            this.activePowerUps[type.id] = {
+                type: type,
+                remaining: type.duration,
+                startTime: Date.now(),
+                maxDuration: type.duration
+            };
+        }
     }
 
     activateByShooting(bullets) {

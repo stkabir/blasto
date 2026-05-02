@@ -1,11 +1,11 @@
 "use strict";
 
 const ASTEROID_TYPES = {
-    LIGHT: { level: 1, color: '#84cc16', hp: 6, points: 15, minSpeed: 80, maxSpeed: 120, radius: 15 },
-    MED: { level: 2, color: '#15803d', hp: 12, points: 30, minSpeed: 70, maxSpeed: 100, radius: 22 },
-    BLUE: { level: 3, color: '#3b82f6', hp: 24, points: 60, minSpeed: 60, maxSpeed: 90, radius: 30 },
-    PURPLE: { level: 4, color: '#a855f7', hp: 48, points: 120, minSpeed: 50, maxSpeed: 80, radius: 38 },
-    RED: { level: 5, color: '#ef4444', hp: 96, points: 240, minSpeed: 40, maxSpeed: 60, radius: 46 }
+    LIGHT:  { level: 1, color: '#84cc16', hp: 10,  radius: 20, fallSpeed: 70 },
+    MED:    { level: 2, color: '#15803d', hp: 20,  radius: 28, fallSpeed: 50 },
+    BLUE:   { level: 3, color: '#3b82f6', hp: 35,  radius: 30, fallSpeed: 50 },
+    PURPLE: { level: 4, color: '#a855f7', hp: 50,  radius: 38, fallSpeed: 40 },
+    RED:    { level: 5, color: '#ef4444', hp: 100, radius: 46, fallSpeed: 30 }
 };
 
 const SPLIT_MAP = {
@@ -28,12 +28,13 @@ class Asteroid {
             this.vx = vx;
             this.vy = vy;
         } else {
-            const speed = this.type.minSpeed + Math.random() * (this.type.maxSpeed - this.type.minSpeed);
+            const speed = this.type.fallSpeed;
             const angle = Math.random() * Math.PI * 0.2 + Math.PI * 0.4;
-            this.vx = Math.cos(angle) * speed * (x < window.innerWidth / 2 ? 1 : -1);
+            this.vx = Math.cos(angle) * speed * 0.3 * (x < window.innerWidth / 2 ? 1 : -1);
             this.vy = Math.sin(angle) * speed;
         }
 
+        this.createdAt = Date.now();
         this.rotation = 0;
         this.rotationSpeed = (Math.random() - 0.5) * 2;
         this.vertices = this.generateVertices();
@@ -44,7 +45,7 @@ class Asteroid {
         const vertices = [];
         for (let i = 0; i < points; i++) {
             const angle = (i / points) * Math.PI * 2;
-            const jag = 0.4;
+            const jag = 0.15;
             const r = this.radius * (1 - jag + Math.random() * jag * 2);
             vertices.push({
                 x: Math.cos(angle) * r,
@@ -56,6 +57,9 @@ class Asteroid {
 
     update(dt, frozen) {
         const speedMod = frozen ? 0.5 : 1;
+        if (this.vy < this.type.fallSpeed && Date.now() - this.createdAt > 500) {
+            this.vy = this.type.fallSpeed;
+        }
         this.x += this.vx * speedMod * dt;
         this.y += this.vy * speedMod * dt;
         this.rotation += this.rotationSpeed * dt;
@@ -90,6 +94,14 @@ class Asteroid {
         ctx.lineWidth = 2;
         ctx.stroke();
 
+        ctx.font = `bold ${this.radius * 0.7}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillText(this.hp, 1, 1);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(this.hp, 0, 0);
+
         ctx.restore();
     }
 
@@ -98,17 +110,18 @@ class Asteroid {
         return this.hp <= 0;
     }
 
-    split() {
+split() {
         const nextType = SPLIT_MAP[this.type.level];
         if (!nextType) return [];
 
         const children = [];
         const speed = 80 + Math.random() * 60;
         const verticalSpeed = speed * (0.8 + Math.random() * 0.2);
-        const horizontalSpeed = speed * 0.5;
+        const horizontalSpeed = speed * 0.1;
+        const upwardBoost = -80 - Math.random() * 40;
 
-        children.push(new Asteroid(this.x, this.y, nextType, -horizontalSpeed * Math.random(), verticalSpeed));
-        children.push(new Asteroid(this.x, this.y, nextType, horizontalSpeed * Math.random(), verticalSpeed));
+        children.push(new Asteroid(this.x, this.y, nextType, -horizontalSpeed * Math.random(), verticalSpeed + upwardBoost));
+        children.push(new Asteroid(this.x, this.y, nextType, horizontalSpeed * Math.random(), verticalSpeed + upwardBoost));
 
         return children;
     }
@@ -181,12 +194,12 @@ class AsteroidManager {
     }
 
     getRandomTypeForScore(score) {
-        const types = ['LIGHT', 'MED'];
-        if (score >= 60) types.push('BLUE');
-        if (score >= 120) types.push('PURPLE');
-        if (score >= 200) types.push('RED');
-
-        return types[Math.floor(Math.random() * types.length)];
+        const rand = Math.random() * 100;
+        if (rand < 40) return 'LIGHT';
+        if (rand < 70) return 'MED';
+        if (rand < 90) return 'BLUE';
+        if (rand < 96) return 'PURPLE';
+        return 'RED';
     }
 
     draw(ctx) {

@@ -42,6 +42,8 @@ class Game {
         this.bossManager = null;
         this.powerUpManager = null;
         this.rockets = [];
+        this.explosions = [];
+        this.powerUpIcons = {};
 
         this.lastTime = 0;
         this.acc = 0;
@@ -214,6 +216,8 @@ class Game {
         this.bossManager = new BossManager();
         this.powerUpManager = new PowerUpManager();
         this.rockets = [];
+        this.explosions = [];
+        this.powerUpIcons = {};
 
         window.game = this;
         window.gameScore = 0;
@@ -247,6 +251,39 @@ class Game {
 
         this.powerUpManager.trySpawnPowerUp(this.score);
         this.bossManager.trySpawn(this.score);
+        this.updateExplosions(dt);
+        this.updatePowerUpIconStyles();
+    }
+
+    createExplosion(x, y, color) {
+        const particles = [];
+        for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * Math.PI * 2;
+            particles.push({
+                x, y,
+                vx: Math.cos(angle) * (80 + Math.random() * 70),
+                vy: Math.sin(angle) * (100 + Math.random() * 80),
+                radius: Math.random() * 8 + 4,
+                life: 1,
+                color
+            });
+        }
+        this.explosions.push({ particles });
+    }
+
+    updateExplosions(dt) {
+        for (let i = this.explosions.length - 1; i >= 0; i--) {
+            const exp = this.explosions[i];
+            let allDead = true;
+            for (const p of exp.particles) {
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.vy += 100 * dt;
+                p.life -= dt * 2;
+                if (p.life > 0) allDead = false;
+            }
+            if (allDead) this.explosions.splice(i, 1);
+        }
     }
 
     updateRockets(dt, frozen) {
@@ -283,9 +320,10 @@ class Game {
         if (collision) {
             const { asteroid, index } = collision;
             const destroyed = asteroid.hit(PLAYER_CONFIG.bulletDamage);
+            this.score += PLAYER_CONFIG.bulletDamage;
 
             if (destroyed) {
-                this.score += asteroid.type.points;
+                this.createExplosion(asteroid.x, asteroid.y, asteroid.type.color);
                 const children = asteroid.split();
                 this.asteroidManager.remove(index);
                 for (const child of children) {
@@ -299,8 +337,8 @@ class Game {
         const bossHit = this.bossManager.checkBulletCollision(this.player.bullets);
         if (bossHit) {
             const destroyed = this.bossManager.boss.hit(PLAYER_CONFIG.bulletDamage);
+            this.score += PLAYER_CONFIG.bulletDamage;
             if (destroyed) {
-                this.score += BOSS_CONFIG.pointsReward;
                 this.bossManager.boss = null;
                 this.updateHUD();
             }
@@ -326,10 +364,10 @@ class Game {
             const dx = r.x - r.target.x;
             const dy = r.y - r.target.y;
             if (Math.sqrt(dx * dx + dy * dy) < r.target.radius) {
-                const destroyed = r.target.hp <= 0;
                 r.target.hp -= r.damage;
-                if (destroyed) {
-                    this.score += r.target.type.points;
+                this.score += r.damage;
+                if (r.target.hp <= 0) {
+                    this.createExplosion(r.target.x, r.target.y, r.target.type.color);
                     const children = r.target.split();
                     const idx = this.asteroidManager.asteroids.indexOf(r.target);
                     if (idx > -1) this.asteroidManager.remove(idx);
@@ -392,6 +430,7 @@ class Game {
             this.bossManager.draw(this.ctx);
             this.player.draw(this.ctx);
             this.drawRockets();
+            this.drawExplosions();
         }
     }
 
@@ -424,6 +463,19 @@ class Game {
         }
     }
 
+    drawExplosions() {
+        for (const exp of this.explosions) {
+            for (const p of exp.particles) {
+                this.ctx.globalAlpha = p.life;
+                this.ctx.fillStyle = p.color;
+                this.ctx.beginPath();
+                this.ctx.arc(p.x, p.y, p.radius * p.life, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+        }
+        this.ctx.globalAlpha = 1;
+    }
+
     gameOver() {
         this.state = 'gameover';
         if (this.score > this.high) {
@@ -444,27 +496,93 @@ class Game {
     }
 
 updatePowerUpIndicator() {
-        this.powerupIndicator.innerHTML = '';
-
-        const activeCount = Object.keys(this.powerUpManager.activePowerUps).filter(k => k !== 'life').length;
+        const activeCount = Object.keys(this.powerUpManager.activePowerUps).length;
         if (activeCount === 0) return;
 
         for (const [id, pu] of Object.entries(this.powerUpManager.activePowerUps)) {
-            if (id === 'life') continue;
-            if (pu.remaining <= 0) continue;
+            if (pu.remaining <= 0 && id !== 'life') continue;
 
-            const progress = pu.remaining / pu.maxDuration;
-            const div = document.createElement('div');
-            div.className = `powerup-icon ${id}`;
-            div.style.setProperty('--progress', progress);
-
-            const iconSpan = document.createElement('span');
-            iconSpan.className = 'powerup-icon-inner';
-            iconSpan.textContent = pu.type.icon;
-            div.appendChild(iconSpan);
-
-            this.powerupIndicator.appendChild(div);
+            if (!this.powerUpIcons[id]) {
+                this.createPowerUpElement(id, pu);
+            }
         }
+    }
+
+    createPowerUpElement(id, pu) {
+        const div = document.createElement('div');
+        div.className = `powerup-icon ${id} active`;
+        div.style.opacity = '0';
+        div.style.transition = 'opacity 0.3s ease-out';
+
+        const color = pu.type.color;
+        div.style.background = `rgba(${this.hexToRgb(color)}, 0.5)`;
+        div.style.border = `2px solid rgba(${this.hexToRgb(color)}, 1)`;
+        div.style.boxShadow = `0 0 20px rgba(${this.hexToRgb(color)}, 1), inset 0 0 15px rgba(${this.hexToRgb(color)}, 0.5)`;
+        div.style.textShadow = `0 0 10px rgba(${this.hexToRgb(color)}, 1)`;
+
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'powerup-icon-inner';
+        iconSpan.textContent = pu.type.icon;
+        div.appendChild(iconSpan);
+
+        this.powerupIndicator.appendChild(div);
+        this.powerUpIcons[id] = div;
+
+        requestAnimationFrame(() => {
+            div.style.opacity = '1';
+        });
+    }
+
+    updatePowerUpIconStyles() {
+        const now = Date.now();
+
+        for (const id in this.powerUpIcons) {
+            const element = this.powerUpIcons[id];
+            const pu = this.powerUpManager.activePowerUps[id];
+
+            if (!pu || (pu.remaining <= 0 && id !== 'life')) {
+                element.style.opacity = '0';
+                element.style.transition = 'opacity 0.3s ease-out';
+                setTimeout(() => {
+                    if (element.parentNode) {
+                        element.parentNode.removeChild(element);
+                    }
+                    delete this.powerUpIcons[id];
+                }, 300);
+                continue;
+            }
+
+            const color = pu.type.color;
+
+            if (id === 'life' || pu.maxDuration === 0 || pu.maxDuration === Infinity) {
+                element.style.opacity = '1';
+                element.style.boxShadow = `0 0 20px rgba(${this.hexToRgb(color)}, 1), inset 0 0 15px rgba(${this.hexToRgb(color)}, 0.5)`;
+            } else {
+                const progress = Math.max(0, pu.remaining / pu.maxDuration);
+                const glowOpacity = 0.3 + (progress * 0.7);
+                const bgOpacity = 0.3 + (progress * 0.5);
+
+                if (pu.remaining <= 3000) {
+                    const blink = (Math.sin(now / 200) + 1) / 2;
+                    const opacity = 0.3 + (blink * 0.7);
+                    element.style.opacity = opacity;
+                    element.style.boxShadow = `0 0 ${15 + blink * 10}px rgba(${this.hexToRgb(color)}, ${glowOpacity}), inset 0 0 15px rgba(${this.hexToRgb(color)}, ${glowOpacity * 0.5})`;
+                } else {
+                    element.style.opacity = glowOpacity;
+                    element.style.boxShadow = `0 0 20px rgba(${this.hexToRgb(color)}, ${glowOpacity}), inset 0 0 15px rgba(${this.hexToRgb(color)}, ${glowOpacity * 0.5})`;
+                }
+
+                element.style.background = `rgba(${this.hexToRgb(color)}, ${bgOpacity})`;
+                element.style.borderColor = `rgba(${this.hexToRgb(color)}, ${progress})`;
+            }
+        }
+    }
+
+    hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result
+            ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
+            : '255, 255, 255';
     }
 
     loop(timestamp) {
