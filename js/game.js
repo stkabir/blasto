@@ -18,6 +18,9 @@ class Game {
         this.instructionsScreen = document.getElementById('instructions-screen');
         this.instructionsBackBtn = document.getElementById('instructions-back-btn');
         this.howToPlayBtn = document.getElementById('how-to-play-btn');
+        this.customizeScreen = document.getElementById('customize-screen');
+        this.customizeBackBtn = document.getElementById('customize-back-btn');
+        this.customizeDesignList = document.getElementById('customize-design-list');
         this.playerInfo = document.getElementById('player-info');
         this.playerNameDisplay = document.getElementById('player-name-display');
         this.playerNameInput = document.getElementById('player-name-input');
@@ -26,6 +29,8 @@ class Game {
         this.playerName = localStorage.getItem('blasto_playerName') || 'Player 1';
         this.playerNameDisplay.textContent = this.playerName;
         this.playerNameInput.value = this.playerName;
+
+        this.playerDesign = localStorage.getItem('blasto_playerDesign') || 'triangle';
 
         this.resize();
         window.addEventListener('resize', () => this.resize());
@@ -77,7 +82,7 @@ class Game {
             e.preventDefault();
             const touch = e.touches[0];
             handleStart(touch.clientX, touch.clientY);
-            if (this.state === 'start') this.startGame();
+            if (this.state === 'start' && !e.target.closest('button')) this.startGame();
             if (this.state === 'gameover') this.restart();
         }, { passive: false });
 
@@ -91,7 +96,7 @@ class Game {
 
         this.canvas.addEventListener('mousedown', (e) => {
             handleStart(e.clientX, e.clientY);
-            if (this.state === 'start') this.startGame();
+            if (this.state === 'start' && !e.target.closest('button')) this.startGame();
             if (this.state === 'gameover') this.restart();
         });
 
@@ -196,9 +201,119 @@ class Game {
         this.instructionsScreen.classList.add('hidden');
     }
 
+    showCustomize() {
+        this.startScreen.classList.add('hidden');
+        this.customizeScreen.classList.remove('hidden');
+        this.createCustomizeList();
+    }
+
+    hideCustomize() {
+        this.customizeScreen.classList.add('hidden');
+        this.startScreen.classList.remove('hidden');
+    }
+
     init() {
         this.highEl.textContent = this.high;
+        this.createDesignSelector();
+        this.setupCustomizeBack();
         requestAnimationFrame((t) => this.loop(t));
+    }
+
+createDesignSelector() {
+        const container = document.getElementById('design-selector');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const toggleBtn = document.createElement('button');
+        toggleBtn.id = 'design-toggle';
+        toggleBtn.textContent = 'Customize';
+        container.appendChild(toggleBtn);
+
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.showCustomize();
+        });
+        toggleBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.showCustomize();
+        }, { passive: false });
+    }
+
+    createCustomizeList() {
+        const list = this.customizeDesignList;
+        if (!list) return;
+        list.innerHTML = '';
+
+        const designs = Object.values(window.PLAYER_DESIGNS);
+        designs.forEach(design => {
+            const item = document.createElement('div');
+            item.className = 'customize-design-item';
+            item.dataset.id = design.id;
+
+            const preview = document.createElement('div');
+            preview.className = 'customize-design-preview';
+            preview.innerHTML = this.getDesignSVG(design);
+            item.appendChild(preview);
+
+            const name = document.createElement('span');
+            name.className = 'customize-design-name';
+            name.textContent = design.name;
+            name.style.color = design.color;
+            item.appendChild(name);
+
+            if (design.id === this.playerDesign) {
+                item.classList.add('selected');
+            }
+
+            item.addEventListener('click', () => this.selectDesign(design.id));
+            item.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.selectDesign(design.id);
+            }, { passive: false });
+            list.appendChild(item);
+        });
+    }
+
+    getDesignSVG(design) {
+        const color = design.color;
+        let path = '';
+        switch (design.id) {
+            case 'triangle':
+                path = `<polygon points="20,4 36,32 4,32" fill="none" stroke="${color}" stroke-width="2"/>`;
+                break;
+            case 'diamond':
+                path = `<polygon points="20,2 36,20 20,38 4,20" fill="none" stroke="${color}" stroke-width="2"/>`;
+                break;
+            case 'wing':
+                path = `<polygon points="20,2 36,30 26,24 20,32 14,24 4,30" fill="none" stroke="${color}" stroke-width="2"/>`;
+                break;
+            case 'hexagon':
+                path = `<polygon points="20,2 35,11 35,29 20,38 5,29 5,11" fill="none" stroke="${color}" stroke-width="2"/>`;
+                break;
+        }
+        return `<svg viewBox="0 0 40 40">${path}</svg>`;
+    }
+
+    selectDesign(id) {
+        this.playerDesign = id;
+        localStorage.setItem('blasto_playerDesign', id);
+        const items = document.querySelectorAll('.customize-design-item');
+        items.forEach(item => {
+            item.classList.toggle('selected', item.dataset.id === id);
+        });
+    }
+
+    setupCustomizeBack() {
+        this.customizeBackBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.hideCustomize();
+        });
+        this.customizeBackBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.hideCustomize();
+        }, { passive: false });
     }
 
     startGame() {
@@ -212,6 +327,7 @@ class Game {
         this.gameOverScreen.classList.add('hidden');
 
         this.player = new Player(this.canvas.width / 2, this.canvas.height - 150);
+        this.player.setDesign(this.playerDesign);
         this.asteroidManager = new AsteroidManager();
         this.bossManager = new BossManager();
         this.powerUpManager = new PowerUpManager();

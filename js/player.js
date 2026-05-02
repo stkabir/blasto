@@ -1,5 +1,61 @@
 "use strict";
 
+const PLAYER_DESIGNS = {
+    triangle: { id: 'triangle', name: 'Triangle', color: '#22d3ee' },
+    diamond:  { id: 'diamond',  name: 'Diamond',  color: '#e879f9' },
+    wing:     { id: 'wing',     name: 'Wing',     color: '#a3e635' },
+    hexagon:  { id: 'hexagon',  name: 'Hexagon',  color: '#38bdf8' }
+};
+
+function drawTriangle(ctx, r) {
+    ctx.beginPath();
+    ctx.moveTo(0, -r);
+    ctx.lineTo(-r * 0.8, r * 0.6);
+    ctx.lineTo(r * 0.8, r * 0.6);
+    ctx.closePath();
+    ctx.stroke();
+}
+
+function drawDiamond(ctx, r) {
+    ctx.beginPath();
+    ctx.moveTo(0, -r);
+    ctx.lineTo(-r * 0.7, 0);
+    ctx.lineTo(0, r * 0.8);
+    ctx.lineTo(r * 0.7, 0);
+    ctx.closePath();
+    ctx.stroke();
+}
+
+function drawWing(ctx, r) {
+    ctx.beginPath();
+    ctx.moveTo(0, -r);
+    ctx.lineTo(-r * 0.9, r * 0.5);
+    ctx.lineTo(-r * 0.5, r * 0.3);
+    ctx.lineTo(0, r * 0.5);
+    ctx.lineTo(r * 0.5, r * 0.3);
+    ctx.lineTo(r * 0.9, r * 0.5);
+    ctx.closePath();
+    ctx.stroke();
+}
+
+function drawHexagon(ctx, r) {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 2;
+        const x = Math.cos(angle) * r;
+        const y = Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+}
+
+PLAYER_DESIGNS.triangle.draw = drawTriangle;
+PLAYER_DESIGNS.diamond.draw = drawDiamond;
+PLAYER_DESIGNS.wing.draw = drawWing;
+PLAYER_DESIGNS.hexagon.draw = drawHexagon;
+
 const PLAYER_CONFIG = {
     speed: 350,
     radius: 18,
@@ -19,6 +75,13 @@ class Player {
         this.bullets = [];
         this.hasShield = false;
         this.shieldStartTime = 0;
+        this.designId = 'triangle';
+    }
+
+    setDesign(id) {
+        if (PLAYER_DESIGNS[id]) {
+            this.designId = id;
+        }
     }
 
     update(dt, keys) {
@@ -125,18 +188,14 @@ fireRocket() {
             ctx.fill();
         }
 
-        ctx.strokeStyle = '#22d3ee';
+        const design = PLAYER_DESIGNS[this.designId] || PLAYER_DESIGNS.triangle;
+        ctx.strokeStyle = design.color;
         ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(0, -this.radius);
-        ctx.lineTo(-this.radius * 0.8, this.radius * 0.6);
-        ctx.lineTo(this.radius * 0.8, this.radius * 0.6);
-        ctx.closePath();
-        ctx.stroke();
+        design.draw(ctx, this.radius);
 
         ctx.restore();
 
-        ctx.fillStyle = '#22d3ee';
+        ctx.fillStyle = design.color;
         for (const b of this.bullets) {
             ctx.beginPath();
             ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
@@ -154,4 +213,5 @@ fireRocket() {
 }
 
 window.PLAYER_CONFIG = PLAYER_CONFIG;
+window.PLAYER_DESIGNS = PLAYER_DESIGNS;
 window.Player = Player;
