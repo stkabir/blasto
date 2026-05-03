@@ -129,9 +129,9 @@ class Player {
     fireTriple() {
         const baseAngle = -Math.PI / 2;
         const angles = [
-            baseAngle - Math.PI / 6,
+            baseAngle - Math.PI / 15,
             baseAngle,
-            baseAngle + Math.PI / 6
+            baseAngle + Math.PI / 15
         ];
 
         for (const angle of angles) {
