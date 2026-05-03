@@ -31,6 +31,7 @@ class Game {
         this.playerNameInput.value = this.playerName;
 
         this.playerDesign = localStorage.getItem('blasto_playerDesign') || 'triangle';
+        this.bulletStyle = localStorage.getItem('blasto_bulletStyle') || 'dual';
 
         this.resize();
         window.addEventListener('resize', () => this.resize());
@@ -273,6 +274,40 @@ createDesignSelector() {
             }, { passive: false });
             list.appendChild(item);
         });
+
+        const separator = document.createElement('div');
+        separator.className = 'customize-section-separator';
+        separator.textContent = 'BULLETS';
+        list.appendChild(separator);
+
+        const bulletStyles = Object.values(window.BULLET_STYLES);
+        bulletStyles.forEach(style => {
+            const item = document.createElement('div');
+            item.className = 'customize-bullet-item';
+            item.dataset.id = style.id;
+
+            const preview = document.createElement('div');
+            preview.className = 'customize-bullet-preview';
+            preview.innerHTML = this.getBulletStyleSVG(style.id);
+            item.appendChild(preview);
+
+            const name = document.createElement('span');
+            name.className = 'customize-bullet-name';
+            name.textContent = style.name;
+            name.style.color = '#22d3ee';
+            item.appendChild(name);
+
+            if (style.id === this.bulletStyle) {
+                item.classList.add('selected');
+            }
+
+            item.addEventListener('click', () => this.selectBulletStyle(style.id));
+            item.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.selectBulletStyle(style.id);
+            }, { passive: false });
+            list.appendChild(item);
+        });
     }
 
     getDesignSVG(design) {
@@ -304,6 +339,43 @@ createDesignSelector() {
         });
     }
 
+    getBulletStyleSVG(id) {
+        const color = '#22d3ee';
+        switch (id) {
+            case 'glow':
+                return `<svg viewBox="0 0 40 40">
+                    <defs>
+                        <filter id="glow-preview" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="2" result="blur"/>
+                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                    </defs>
+                    <circle cx="20" cy="20" r="8" fill="${color}" filter="url(#glow-preview)"/>
+                </svg>`;
+            case 'elongated':
+                return `<svg viewBox="0 0 40 40">
+                    <line x1="20" y1="32" x2="20" y2="8" stroke="${color}" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+                    <ellipse cx="20" cy="20" rx="5" ry="8" fill="${color}"/>
+                </svg>`;
+            case 'dual':
+            default:
+                return `<svg viewBox="0 0 40 40">
+                    <circle cx="20" cy="20" r="8" fill="${color}" opacity="0.3"/>
+                    <circle cx="20" cy="20" r="5" fill="${color}"/>
+                    <circle cx="20" cy="20" r="2" fill="white"/>
+                </svg>`;
+        }
+    }
+
+    selectBulletStyle(id) {
+        this.bulletStyle = id;
+        localStorage.setItem('blasto_bulletStyle', id);
+        const items = document.querySelectorAll('.customize-bullet-item');
+        items.forEach(item => {
+            item.classList.toggle('selected', item.dataset.id === id);
+        });
+    }
+
     setupCustomizeBack() {
         this.customizeBackBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -328,6 +400,7 @@ createDesignSelector() {
 
         this.player = new Player(this.canvas.width / 2, this.canvas.height - 150);
         this.player.setDesign(this.playerDesign);
+        this.player.setBulletStyle(this.bulletStyle);
         this.asteroidManager = new AsteroidManager();
         this.bossManager = new BossManager();
         this.powerUpManager = new PowerUpManager();

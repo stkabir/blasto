@@ -64,6 +64,12 @@ const PLAYER_CONFIG = {
     bulletDamage: 1
 };
 
+const BULLET_STYLES = {
+    glow: { id: 'glow', name: 'Glow' },
+    elongated: { id: 'elongated', name: 'Elongated' },
+    dual: { id: 'dual', name: 'Dual' }
+};
+
 class Player {
     constructor(x, y) {
         this.x = x;
@@ -76,11 +82,18 @@ class Player {
         this.hasShield = false;
         this.shieldStartTime = 0;
         this.designId = 'triangle';
+        this.bulletStyle = 'dual';
     }
 
     setDesign(id) {
         if (PLAYER_DESIGNS[id]) {
             this.designId = id;
+        }
+    }
+
+    setBulletStyle(id) {
+        if (BULLET_STYLES[id]) {
+            this.bulletStyle = id;
         }
     }
 
@@ -122,7 +135,8 @@ class Player {
             y: this.y,
             vx,
             vy,
-            radius: 8
+            radius: 8,
+            history: [{ x: this.x, y: this.y }]
         });
     }
 
@@ -142,7 +156,8 @@ class Player {
                 y: this.y,
                 vx,
                 vy,
-                radius: 6
+                radius: 6,
+                history: [{ x: this.x, y: this.y }]
             });
         }
     }
@@ -166,6 +181,11 @@ fireRocket() {
             const b = this.bullets[i];
             b.x += b.vx * dt;
             b.y += b.vy * dt;
+
+            if (this.bulletStyle === 'elongated') {
+                b.history.unshift({ x: b.x, y: b.y });
+                if (b.history.length > 8) b.history.pop();
+            }
 
             if (b.y < -20 || b.y > window.innerHeight + 20 ||
                 b.x < -20 || b.x > window.innerWidth + 20) {
@@ -195,12 +215,60 @@ fireRocket() {
 
         ctx.restore();
 
-        ctx.fillStyle = design.color;
         for (const b of this.bullets) {
-            ctx.beginPath();
-            ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-            ctx.fill();
+            this.drawBullet(ctx, b, design.color);
         }
+    }
+
+    drawBullet(ctx, b, color) {
+        ctx.save();
+
+        switch (this.bulletStyle) {
+            case 'glow':
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+
+            case 'elongated':
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                for (let i = 0; i < b.history.length; i++) {
+                    const point = b.history[i];
+                    ctx.globalAlpha = (b.history.length - i) / b.history.length * 0.6;
+                    if (i === 0) ctx.moveTo(point.x, point.y);
+                    else ctx.lineTo(point.x, point.y);
+                }
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.ellipse(b.x, b.y, b.radius * 1.3, b.radius * 0.8, 0, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+
+            case 'dual':
+            default:
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 20;
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 8;
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+        }
+
+        ctx.restore();
     }
 
     reset(x, y) {
@@ -214,4 +282,5 @@ fireRocket() {
 
 window.PLAYER_CONFIG = PLAYER_CONFIG;
 window.PLAYER_DESIGNS = PLAYER_DESIGNS;
+window.BULLET_STYLES = BULLET_STYLES;
 window.Player = Player;
