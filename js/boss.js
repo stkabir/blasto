@@ -138,6 +138,7 @@ class BossManager {
     constructor() {
         this.boss = null;
         this.nextBossScore = BOSS_CONFIG.pointsToAppear;
+        this.onSpawn = null;
     }
 
     update(dt) {
@@ -151,6 +152,7 @@ class BossManager {
         if (score >= this.nextBossScore) {
             this.spawn();
             this.nextBossScore += BOSS_CONFIG.pointsToAppear;
+            if (this.onSpawn) this.onSpawn();
         }
     }
 
