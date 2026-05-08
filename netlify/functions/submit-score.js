@@ -1,6 +1,6 @@
 "use strict";
 
-const API_URL = process.env.LEADERBOARD_API_URL;
+const pool = require("./db");
 
 exports.handler = async (event) => {
   const headers = {
@@ -14,46 +14,67 @@ exports.handler = async (event) => {
   }
 
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, headers, body: JSON.stringify({ error: "Method not allowed" }) };
-  }
-
-  if (!API_URL) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: "API not configured" }) };
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ error: "Method not allowed" }),
+    };
   }
 
   let body;
   try {
     body = JSON.parse(event.body);
   } catch {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid JSON" }) };
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: "Invalid JSON" }),
+    };
   }
 
   const { name, score } = body;
 
-  if (!name || typeof name !== "string" || name.trim().length === 0 || name.length > 12) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid name" }) };
+  if (
+    !name ||
+    typeof name !== "string" ||
+    name.trim().length === 0 ||
+    name.length > 12
+  ) {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: "Invalid name (1-12 characters)" }),
+    };
   }
 
   if (!Number.isInteger(score) || score < 0) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid score" }) };
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: "Invalid score" }),
+    };
   }
 
+  let conn;
   try {
-    const res = await fetch(`${API_URL}/api/scores`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), score }),
-    });
-
-    const data = await res.json();
-
+    conn = await pool.getConnection();
+    await conn.execute("INSERT INTO scores (name, score) VALUES (?, ?)", [
+      name.trim(),
+      score,
+    ]);
     return {
-      statusCode: res.status,
+      statusCode: 200,
       headers,
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ok: true }),
     };
   } catch (err) {
     console.error("submit-score error:", err.message);
-    return { statusCode: 502, headers, body: JSON.stringify({ error: "Backend unavailable" }) };
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: "Database error" }),
+    };
+  } finally {
+    if (conn) conn.release();
   }
 };

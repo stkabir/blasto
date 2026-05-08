@@ -1,6 +1,6 @@
 "use strict";
 
-const API_URL = process.env.LEADERBOARD_API_URL;
+const pool = require("./db");
 
 exports.handler = async (event) => {
   const headers = {
@@ -13,24 +13,38 @@ exports.handler = async (event) => {
   }
 
   if (event.httpMethod !== "GET") {
-    return { statusCode: 405, headers, body: JSON.stringify({ error: "Method not allowed" }) };
-  }
-
-  if (!API_URL) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: "API not configured" }) };
-  }
-
-  try {
-    const res = await fetch(`${API_URL}/api/scores`);
-    const data = await res.json();
-
     return {
-      statusCode: res.status,
+      statusCode: 405,
       headers,
-      body: JSON.stringify(data),
+      body: JSON.stringify({ error: "Method not allowed" }),
+    };
+  }
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const [rows] = await conn.query(
+      "SELECT name, score, created_at FROM scores ORDER BY score DESC LIMIT 20"
+    );
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify(
+        rows.map(({ name, score, created_at }) => ({
+          name,
+          score,
+          created_at,
+        }))
+      ),
     };
   } catch (err) {
     console.error("get-leaderboard error:", err.message);
-    return { statusCode: 502, headers, body: JSON.stringify({ error: "Backend unavailable" }) };
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: "Database error" }),
+    };
+  } finally {
+    if (conn) conn.release();
   }
 };

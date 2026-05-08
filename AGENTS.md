@@ -82,17 +82,11 @@ index.html       - Production entry point (loads .min.js)
 - Rendered on game over screen and leaderboard screen
 
 ### Global Leaderboard
-- Netlify Functions → API on VPS (Dokploy) → MariaDB
-- `netlify/functions/submit-score.js` — POST score to VPS
-- `netlify/functions/get-leaderboard.js` — GET top 20 from VPS
-- Variable: `LEADERBOARD_API_URL` in Netlify env
-
-### Server (VPS)
-- `server/server.js` — Express API with MariaDB
-- `server/init.sql` — DB schema (auto-created on startup)
-- `server/Dockerfile` — For Dokploy deployment
-- Endpoints: `GET /api/scores` (top 20), `POST /api/scores` (submit)
-- Rate limiting: 10 req/min per IP on POST
+- Netlify Functions → MySQL (VPS: 2.24.31.74:3320)
+- `netlify/functions/db.js` — mysql2/promise pool (credentials hardcoded)
+- `netlify/functions/submit-score.js` — POST score directly to MySQL
+- `netlify/functions/get-leaderboard.js` — GET top 20 directly from MySQL
+- Table: `scores` (id, name, score, created_at, ip_address)
 
 ### Leaderboard UI
 - Game over screen: shows top 5 local + top 20 global
