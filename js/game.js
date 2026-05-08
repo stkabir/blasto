@@ -32,6 +32,7 @@ class Game {
         this.lbGlobalList = document.getElementById('lb-global-list');
         this.gameoverLocalLb = document.getElementById('gameover-local-lb');
         this.gameoverGlobalLb = document.getElementById('gameover-global-lb');
+        this.hud = document.getElementById('hud');
 
         this.playerName = localStorage.getItem('blasto_playerName') || 'Player 1';
         this.playerNameDisplay.textContent = this.playerName;
