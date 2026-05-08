@@ -1,10 +1,10 @@
 "use strict";
 
 const PLAYER_DESIGNS = {
-    triangle: { id: 'triangle', name: 'Triangle', color: '#22d3ee' },
-    diamond:  { id: 'diamond',  name: 'Diamond',  color: '#e879f9' },
-    wing:     { id: 'wing',     name: 'Wing',     color: '#a3e635' },
-    hexagon:  { id: 'hexagon',  name: 'Hexagon',  color: '#38bdf8' }
+    triangle: { id: 'triangle', name: 'Triángulo', color: '#22d3ee' },
+    diamond:  { id: 'diamond',  name: 'Diamante',  color: '#e879f9' },
+    wing:     { id: 'wing',     name: 'Ala',       color: '#a3e635' },
+    hexagon:  { id: 'hexagon',  name: 'Hexágono',  color: '#38bdf8' }
 };
 
 function drawTriangle(ctx, r) {
@@ -65,9 +65,9 @@ const PLAYER_CONFIG = {
 };
 
 const BULLET_STYLES = {
-    glow: { id: 'glow', name: 'Glow' },
-    elongated: { id: 'elongated', name: 'Elongated' },
-    dual: { id: 'dual', name: 'Dual' }
+    glow: { id: 'glow', name: 'Brillo' },
+    elongated: { id: 'elongated', name: 'Alargado' },
+    dual: { id: 'dual', name: 'Doble' }
 };
 
 class Player {

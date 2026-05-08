@@ -9,32 +9,32 @@
 <body>
     <div id="game-container">
         <canvas id="game"></canvas>
-        <div id="hud">
+        <div id="hud" class="hidden">
             <div id="player-info" class="hud-item clickable">
-                <span class="label">PLAYER</span>
-                <span id="player-name-display">Player 1</span>
+                <span class="label">JUGADOR</span>
+                <span id="player-name-display">Jugador</span>
             </div>
             <div class="hud-item">
                 <span class="label">PTS</span>
                 <span id="score">0</span>
             </div>
             <div class="hud-item">
-                <span class="label">HIGH</span>
+                <span class="label">RÉCORD</span>
                 <span id="high">0</span>
             </div>
         </div>
         <div id="powerup-indicator"></div>
         <div id="start-screen">
-            <input type="text" id="player-name-input" value="Player 1" maxlength="12" autocomplete="off">
+            <input type="text" id="player-name-input" placeholder="Tu nombre" maxlength="12" autocomplete="off">
             <h1>BLASTO</h1>
-            <p>Tap to Start</p>
-            <button id="design-toggle" class="menu-btn">Customize</button>
-            <button id="how-to-play-btn" class="menu-btn">How to Play</button>
-            <button id="leaderboard-btn" class="menu-btn">Leaderboard</button>
+            <p id="start-prompt">Escribe tu nombre arriba y presiona aquí para jugar</p>
+            <button id="design-toggle" class="menu-btn">Personalizar</button>
+            <button id="how-to-play-btn" class="menu-btn">Cómo Jugar</button>
+            <button id="leaderboard-btn" class="menu-btn">Clasificación</button>
         </div>
         <div id="game-over-screen" class="hidden">
-            <h1>GAME OVER</h1>
-            <p id="final-score-name">PlayerName</p>
+            <h1>FIN DE JUEGO</h1>
+            <p id="final-score-name">Nombre</p>
             <p id="final-score">0</p>
             <div id="gameover-leaderboard">
                 <h3>TOP 5 LOCAL</h3>
@@ -42,50 +42,50 @@
                 <h3>TOP 20 GLOBAL</h3>
                 <div id="gameover-global-lb" class="lb-list"></div>
             </div>
-            <p>Tap to Restart</p>
+            <p>Presiona para Reiniciar</p>
         </div>
         <div id="pause-screen" class="hidden">
-            <h1>PAUSED</h1>
-            <p>Tap to Resume</p>
+            <h1>PAUSA</h1>
+            <p>Presiona para Continuar</p>
         </div>
         <div id="instructions-screen" class="hidden">
-            <h1>HOW TO PLAY</h1>
+            <h1>CÓMO JUGAR</h1>
             <div class="instructions-controls">
-                <p>Full screen scrolling left to right</p>
-                <p>You lose against asteroids and enemies</p>
-                <p>Tap "Player 1" to change your name</p>
+                <p>Desplazamiento vertical de arriba a abajo</p>
+                <p>Pierdes si te golpean los asteroides o enemigos</p>
+                <p>Toca tu nombre para cambiarlo</p>
             </div>
             <div class="instructions-powerups">
                 <div class="powerup-item">
                     <span class="powerup-icon-only">⚡</span>
-                    <span class="powerup-label">Triple Shot</span>
+                    <span class="powerup-label">Disparo Triple</span>
                 </div>
                 <div class="powerup-item">
                     <span class="powerup-icon-only">🚀</span>
-                    <span class="powerup-label">High Damage</span>
+                    <span class="powerup-label">Alto Daño</span>
                 </div>
                 <div class="powerup-item">
                     <span class="powerup-icon-only">🛡</span>
-                    <span class="powerup-label">Invulnerable</span>
+                    <span class="powerup-label">Invencible</span>
                 </div>
                 <div class="powerup-item">
                     <span class="powerup-icon-only">❄</span>
-                    <span class="powerup-label">Slow Asteroids</span>
+                    <span class="powerup-label">Asteroides Lentos</span>
                 </div>
                 <div class="powerup-item">
                     <span class="powerup-icon-only">❤</span>
-                    <span class="powerup-label">Extra Life</span>
+                    <span class="powerup-label">Vida Extra</span>
                 </div>
             </div>
-            <button id="instructions-back-btn">Back</button>
+            <button id="instructions-back-btn">Volver</button>
         </div>
         <div id="customize-screen" class="hidden">
-            <h1>CUSTOMIZE</h1>
+            <h1>PERSONALIZAR</h1>
             <div id="customize-design-list"></div>
-            <button id="customize-back-btn">Back</button>
+            <button id="customize-back-btn">Volver</button>
         </div>
         <div id="leaderboard-screen" class="hidden">
-            <h1>LEADERBOARD</h1>
+            <h1>CLASIFICACIÓN</h1>
             <div class="lb-tabs">
                 <button class="lb-tab active" data-tab="local">Local</button>
                 <button class="lb-tab" data-tab="global">Global</button>
@@ -96,7 +96,7 @@
             <div id="lb-global-tab" class="lb-tab-content hidden">
                 <div id="lb-global-list" class="lb-list"></div>
             </div>
-            <button id="leaderboard-back-btn">Back</button>
+            <button id="leaderboard-back-btn">Volver</button>
         </div>
     </div>
     <script src="js/powerup.min.js"></script>

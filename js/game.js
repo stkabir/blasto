@@ -515,9 +515,9 @@ class Game {
         }
     }
 
-    saveLocalScore(name, score) {
+    saveLocalScore(name, score, designId) {
         const lb = this.getLocalLeaderboard();
-        lb.push({ name, score, date: Date.now() });
+        lb.push({ name, score, designId, date: Date.now() });
         lb.sort((a, b) => b.score - a.score);
         const trimmed = lb.slice(0, 5);
         localStorage.setItem('blasto_leaderboard', JSON.stringify(trimmed));
@@ -534,22 +534,21 @@ class Game {
         }
     }
 
-    async submitGlobalScore(name, score) {
+    async submitGlobalScore(name, score, designId) {
         try {
             await fetch('https://api.blasto.pro/api/submit-score', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, score }),
+                body: JSON.stringify({ name, score, designId }),
             });
         } catch {
-            // silent fail
         }
     }
 
-    renderLeaderboardRows(container, entries, currentName, currentScore) {
+    renderLeaderboardRows(container, entries, currentName, currentScore, showShip = false) {
         container.innerHTML = '';
         if (!entries || entries.length === 0) {
-            container.innerHTML = '<div class="lb-empty">No scores yet</div>';
+            container.innerHTML = '<div class="lb-empty">Sin puntuaciones aún</div>';
             return;
         }
         entries.forEach((entry, i) => {
@@ -557,8 +556,13 @@ class Game {
             row.className = 'lb-row';
             const isCurrent = entry.name === currentName && entry.score === currentScore;
             if (isCurrent) row.classList.add('current');
+            let shipHtml = '';
+            if (showShip && entry.designId) {
+                shipHtml = `<span class="lb-ship">${this.getShipIconSVG(entry.designId)}</span>`;
+            }
             row.innerHTML = `
                 <span class="lb-rank">${i + 1}</span>
+                ${shipHtml}
                 <span class="lb-name">${this.escapeHtml(entry.name)}</span>
                 <span class="lb-score">${entry.score}</span>
             `;
@@ -568,17 +572,17 @@ class Game {
 
     renderLocalLeaderboard(container, currentName, currentScore) {
         const lb = this.getLocalLeaderboard();
-        this.renderLeaderboardRows(container, lb, currentName, currentScore);
+        this.renderLeaderboardRows(container, lb, currentName, currentScore, true);
     }
 
     async renderGlobalLeaderboard(container, currentName, currentScore) {
-        container.innerHTML = '<div class="lb-loading">Loading...</div>';
+        container.innerHTML = '<div class="lb-loading">Cargando...</div>';
         const data = await this.fetchGlobalLeaderboard();
         if (!data) {
-            container.innerHTML = '<div class="lb-empty">Unavailable</div>';
+            container.innerHTML = '<div class="lb-empty">No disponible</div>';
             return;
         }
-        this.renderLeaderboardRows(container, data, currentName, currentScore);
+        this.renderLeaderboardRows(container, data, currentName, currentScore, true);
     }
 
     escapeHtml(str) {
@@ -616,7 +620,7 @@ createDesignSelector() {
         const toggleBtn = document.createElement('button');
         toggleBtn.id = 'design-toggle';
         toggleBtn.className = 'menu-btn';
-        toggleBtn.textContent = 'Customize';
+        toggleBtn.textContent = 'Personalizar';
         container.appendChild(toggleBtn);
 
         toggleBtn.addEventListener('click', (e) => {
@@ -635,6 +639,8 @@ createDesignSelector() {
         if (!list) return;
         list.innerHTML = '';
 
+        const shipsGrid = document.createElement('div');
+        shipsGrid.className = 'customize-grid';
         const designs = Object.values(window.PLAYER_DESIGNS);
         designs.forEach(design => {
             const item = document.createElement('div');
@@ -646,12 +652,6 @@ createDesignSelector() {
             preview.innerHTML = this.getDesignSVG(design);
             item.appendChild(preview);
 
-            const name = document.createElement('span');
-            name.className = 'customize-design-name';
-            name.textContent = design.name;
-            name.style.color = design.color;
-            item.appendChild(name);
-
             if (design.id === this.playerDesign) {
                 item.classList.add('selected');
             }
@@ -661,14 +661,17 @@ createDesignSelector() {
                 e.preventDefault();
                 this.selectDesign(design.id);
             }, { passive: false });
-            list.appendChild(item);
+            shipsGrid.appendChild(item);
         });
+        list.appendChild(shipsGrid);
 
         const separator = document.createElement('div');
         separator.className = 'customize-section-separator';
-        separator.textContent = 'BULLETS';
+        separator.textContent = 'DISPAROS';
         list.appendChild(separator);
 
+        const bulletsGrid = document.createElement('div');
+        bulletsGrid.className = 'customize-grid';
         const bulletStyles = Object.values(window.BULLET_STYLES);
         bulletStyles.forEach(style => {
             const item = document.createElement('div');
@@ -680,12 +683,6 @@ createDesignSelector() {
             preview.innerHTML = this.getBulletStyleSVG(style.id);
             item.appendChild(preview);
 
-            const name = document.createElement('span');
-            name.className = 'customize-bullet-name';
-            name.textContent = style.name;
-            name.style.color = '#22d3ee';
-            item.appendChild(name);
-
             if (style.id === this.bulletStyle) {
                 item.classList.add('selected');
             }
@@ -695,8 +692,9 @@ createDesignSelector() {
                 e.preventDefault();
                 this.selectBulletStyle(style.id);
             }, { passive: false });
-            list.appendChild(item);
+            bulletsGrid.appendChild(item);
         });
+        list.appendChild(bulletsGrid);
     }
 
     getDesignSVG(design) {
@@ -717,6 +715,11 @@ createDesignSelector() {
                 break;
         }
         return `<svg viewBox="0 0 40 40">${path}</svg>`;
+    }
+
+    getShipIconSVG(designId) {
+        const design = window.PLAYER_DESIGNS[designId] || window.PLAYER_DESIGNS.triangle;
+        return this.getDesignSVG(design);
     }
 
     selectDesign(id) {
@@ -778,7 +781,16 @@ createDesignSelector() {
     }
 
     startGame() {
-        this.playerName = this.playerNameInput.value.trim() || 'Player 1';
+        const enteredName = this.playerNameInput.value.trim();
+        if (!enteredName) {
+            this.playerNameInput.focus();
+            this.playerNameInput.style.borderBottomColor = '#ef4444';
+            setTimeout(() => {
+                this.playerNameInput.style.borderBottomColor = '#22d3ee';
+            }, 1000);
+            return;
+        }
+        this.playerName = enteredName;
         localStorage.setItem('blasto_playerName', this.playerName);
         this.playerNameDisplay.textContent = this.playerName;
 
@@ -786,6 +798,7 @@ createDesignSelector() {
         this.score = 0;
         this.startScreen.classList.add('hidden');
         this.gameOverScreen.classList.add('hidden');
+        this.hud.classList.remove('hidden');
 
         this.playerTrail = [];
         this.floatingTexts = [];
@@ -797,7 +810,7 @@ createDesignSelector() {
         this.bossManager = new BossManager();
         this.bossManager.onSpawn = () => {
             this.triggerShake(10, 300);
-            this.announce('BOSS!', { color: '#ef4444', fontSize: 80 });
+            this.announce('¡JEFE!', { color: '#ef4444', fontSize: 80 });
         };
         this.powerUpManager = new PowerUpManager();
         this.rockets = [];
@@ -937,13 +950,13 @@ createDesignSelector() {
             this.comboCount++;
 
             if (this.comboCount === 5) {
-                this.announce('COMBO!', { color: '#f59e0b', fontSize: 56 });
+                this.announce('¡COMBO!', { color: '#f59e0b', fontSize: 56 });
                 this.triggerShake(6, 150);
             } else if (this.comboCount === 10) {
-                this.announce('ON FIRE!', { color: '#ef4444', fontSize: 64 });
+                this.announce('¡EN FUEGO!', { color: '#ef4444', fontSize: 64 });
                 this.triggerShake(8, 200);
             } else if (this.comboCount === 20) {
-                this.announce('UNSTOPPABLE!', { color: '#a855f7', fontSize: 72 });
+                this.announce('¡INCREÍBLE!', { color: '#a855f7', fontSize: 72 });
                 this.triggerShake(10, 250);
             }
 
@@ -1139,9 +1152,10 @@ createDesignSelector() {
 
         this.highEl.textContent = this.high;
         this.playerInfo.classList.remove('paused');
+        this.hud.classList.add('hidden');
 
-        this.saveLocalScore(this.playerName, this.score);
-        this.submitGlobalScore(this.playerName, this.score);
+        this.saveLocalScore(this.playerName, this.score, this.playerDesign);
+        this.submitGlobalScore(this.playerName, this.score, this.playerDesign);
         this.renderLocalLeaderboard(this.gameoverLocalLb, this.playerName, this.score);
         this.renderGlobalLeaderboard(this.gameoverGlobalLb, this.playerName, this.score);
 
