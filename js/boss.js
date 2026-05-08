@@ -1,7 +1,7 @@
 "use strict";
 
 const BOSS_CONFIG = {
-    pointsToAppear: 300,
+    pointsToAppear: 1000,
     pointsReward: 350,
     speed: 100,
     bulletSpeed: 225,

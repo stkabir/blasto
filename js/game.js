@@ -25,6 +25,13 @@ class Game {
         this.playerNameDisplay = document.getElementById('player-name-display');
         this.playerNameInput = document.getElementById('player-name-input');
         this.finalScoreEl = document.getElementById('final-score');
+        this.leaderboardScreen = document.getElementById('leaderboard-screen');
+        this.leaderboardBtn = document.getElementById('leaderboard-btn');
+        this.leaderboardBackBtn = document.getElementById('leaderboard-back-btn');
+        this.lbLocalList = document.getElementById('lb-local-list');
+        this.lbGlobalList = document.getElementById('lb-global-list');
+        this.gameoverLocalLb = document.getElementById('gameover-local-lb');
+        this.gameoverGlobalLb = document.getElementById('gameover-global-lb');
 
         this.playerName = localStorage.getItem('blasto_playerName') || 'Player 1';
         this.playerNameDisplay.textContent = this.playerName;
@@ -56,8 +63,6 @@ class Game {
         this.lastBossSpawn = 0;
 
         this.starfield = this.createStarfield(100);
-        this.bgHue = 0;
-
         this.shakeIntensity = 0;
         this.shakeTimer = 0;
 
@@ -396,6 +401,39 @@ class Game {
             this.showInstructions();
         }, { passive: false });
 
+        this.leaderboardBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.showLeaderboard();
+        });
+
+        this.leaderboardBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.showLeaderboard();
+        }, { passive: false });
+
+        this.leaderboardBackBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.hideLeaderboard();
+        });
+
+        this.leaderboardBackBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.hideLeaderboard();
+        }, { passive: false });
+
+        this.leaderboardScreen.querySelectorAll('.lb-tab').forEach((tab) => {
+            tab.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const target = tab.dataset.tab;
+                this.leaderboardScreen.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('lb-local-tab').classList.toggle('hidden', target !== 'local');
+                document.getElementById('lb-global-tab').classList.toggle('hidden', target !== 'global');
+            });
+        });
+
         this.canvas.addEventListener('mousemove', (e) => {
             if (e.buttons === 1) handleMove(e.clientX, e.clientY);
         });
@@ -447,6 +485,106 @@ class Game {
         this.customizeScreen.classList.add('hidden');
         this.startScreen.classList.remove('hidden');
         this.state = 'start';
+    }
+
+    showLeaderboard() {
+        this.state = 'leaderboard';
+        this.startScreen.classList.add('hidden');
+        this.leaderboardScreen.classList.remove('hidden');
+        this.renderLocalLeaderboard(this.lbLocalList);
+        this.renderGlobalLeaderboard(this.lbGlobalList);
+        const localTab = this.leaderboardScreen.querySelector('[data-tab="local"]');
+        const globalTab = this.leaderboardScreen.querySelector('[data-tab="global"]');
+        localTab.classList.add('active');
+        globalTab.classList.remove('active');
+        document.getElementById('lb-local-tab').classList.remove('hidden');
+        document.getElementById('lb-global-tab').classList.add('hidden');
+    }
+
+    hideLeaderboard() {
+        this.leaderboardScreen.classList.add('hidden');
+        this.startScreen.classList.remove('hidden');
+        this.state = 'start';
+    }
+
+    getLocalLeaderboard() {
+        try {
+            return JSON.parse(localStorage.getItem('blasto_leaderboard') || '[]');
+        } catch {
+            return [];
+        }
+    }
+
+    saveLocalScore(name, score) {
+        const lb = this.getLocalLeaderboard();
+        lb.push({ name, score, date: Date.now() });
+        lb.sort((a, b) => b.score - a.score);
+        const trimmed = lb.slice(0, 5);
+        localStorage.setItem('blasto_leaderboard', JSON.stringify(trimmed));
+        return trimmed;
+    }
+
+    async fetchGlobalLeaderboard() {
+        try {
+            const res = await fetch('/.netlify/functions/get-leaderboard');
+            if (!res.ok) throw new Error('Failed');
+            return await res.json();
+        } catch {
+            return null;
+        }
+    }
+
+    async submitGlobalScore(name, score) {
+        try {
+            await fetch('/.netlify/functions/submit-score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, score }),
+            });
+        } catch {
+            // silent fail
+        }
+    }
+
+    renderLeaderboardRows(container, entries, currentName, currentScore) {
+        container.innerHTML = '';
+        if (!entries || entries.length === 0) {
+            container.innerHTML = '<div class="lb-empty">No scores yet</div>';
+            return;
+        }
+        entries.forEach((entry, i) => {
+            const row = document.createElement('div');
+            row.className = 'lb-row';
+            const isCurrent = entry.name === currentName && entry.score === currentScore;
+            if (isCurrent) row.classList.add('current');
+            row.innerHTML = `
+                <span class="lb-rank">${i + 1}</span>
+                <span class="lb-name">${this.escapeHtml(entry.name)}</span>
+                <span class="lb-score">${entry.score}</span>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    renderLocalLeaderboard(container, currentName, currentScore) {
+        const lb = this.getLocalLeaderboard();
+        this.renderLeaderboardRows(container, lb, currentName, currentScore);
+    }
+
+    async renderGlobalLeaderboard(container, currentName, currentScore) {
+        container.innerHTML = '<div class="lb-loading">Loading...</div>';
+        const data = await this.fetchGlobalLeaderboard();
+        if (!data) {
+            container.innerHTML = '<div class="lb-empty">Unavailable</div>';
+            return;
+        }
+        this.renderLeaderboardRows(container, data, currentName, currentScore);
+    }
+
+    escapeHtml(str) {
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
     }
 
     init() {
@@ -680,7 +818,6 @@ createDesignSelector() {
     }
 
     update(dt) {
-        this.bgHue = (this.bgHue + dt * 6) % 360;
         this.updateStarfield(dt);
         this.updateShake(dt);
         this.updateFlash(dt);
@@ -914,9 +1051,6 @@ createDesignSelector() {
         this.ctx.fillRect(-10, -10, this.canvas.width + 20, this.canvas.height + 20);
 
         this.drawStarfield();
-        if (this.state !== 'start' && this.state !== 'instructions' && this.state !== 'customize') {
-            this.drawGrid();
-        }
         this.drawTrail();
 
         if (this.state === 'playing') {
@@ -935,44 +1069,6 @@ createDesignSelector() {
         if (this.flashAlpha > 0) {
             this.ctx.fillStyle = `rgba(255, 255, 255, ${this.flashAlpha})`;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        }
-    }
-
-    hslToRgb(h, s, l) {
-        s /= 100;
-        l /= 100;
-        const c = (1 - Math.abs(2 * l - 1)) * s;
-        const x = c * (1 - Math.abs((h / 60) % 2 - 1));
-        const m = l - c / 2;
-        let r = 0, g = 0, b = 0;
-        if (h < 60) { r = c; g = x; b = 0; }
-        else if (h < 120) { r = x; g = c; b = 0; }
-        else if (h < 180) { r = 0; g = c; b = x; }
-        else if (h < 240) { r = 0; g = x; b = c; }
-        else if (h < 300) { r = x; g = 0; b = c; }
-        else { r = c; g = 0; b = x; }
-        return { r: Math.round((r + m) * 255), g: Math.round((g + m) * 255), b: Math.round((b + m) * 255) };
-    }
-
-    drawGrid() {
-        const hue = this.bgHue;
-        const rgb = this.hslToRgb(hue, 20, 12);
-        this.ctx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.4)`;
-        this.ctx.lineWidth = 1;
-        const gridSize = 36;
-
-        for (let x = 0; x <= this.canvas.width; x += gridSize) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(x + 0.5, 0);
-            this.ctx.lineTo(x + 0.5, this.canvas.height);
-            this.ctx.stroke();
-        }
-
-        for (let y = 0; y <= this.canvas.height; y += gridSize) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, y + 0.5);
-            this.ctx.lineTo(this.canvas.width, y + 0.5);
-            this.ctx.stroke();
         }
     }
 
@@ -1029,6 +1125,11 @@ createDesignSelector() {
 
         this.highEl.textContent = this.high;
         this.playerInfo.classList.remove('paused');
+
+        this.saveLocalScore(this.playerName, this.score);
+        this.submitGlobalScore(this.playerName, this.score);
+        this.renderLocalLeaderboard(this.gameoverLocalLb, this.playerName, this.score);
+        this.renderGlobalLeaderboard(this.gameoverGlobalLb, this.playerName, this.score);
 
         setTimeout(() => {
             this.finalScoreEl.textContent = `${this.score}`;

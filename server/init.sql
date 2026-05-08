@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS scores (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(12) NOT NULL,
+  score INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  ip_address VARCHAR(45)
+);
+
+CREATE INDEX idx_score ON scores (score DESC);

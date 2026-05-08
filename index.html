@@ -30,11 +30,18 @@
             <p>Tap to Start</p>
             <div id="design-selector"></div>
             <button id="how-to-play-btn" class="menu-btn">How to Play</button>
+            <button id="leaderboard-btn" class="menu-btn">Leaderboard</button>
         </div>
         <div id="game-over-screen" class="hidden">
             <h1>GAME OVER</h1>
             <p id="final-score-name">PlayerName</p>
             <p id="final-score">0</p>
+            <div id="gameover-leaderboard">
+                <h3>TOP 5 LOCAL</h3>
+                <div id="gameover-local-lb" class="lb-list"></div>
+                <h3>TOP 20 GLOBAL</h3>
+                <div id="gameover-global-lb" class="lb-list"></div>
+            </div>
             <p>Tap to Restart</p>
         </div>
         <div id="pause-screen" class="hidden">
@@ -76,6 +83,20 @@
             <h1>CUSTOMIZE</h1>
             <div id="customize-design-list"></div>
             <button id="customize-back-btn">Back</button>
+        </div>
+        <div id="leaderboard-screen" class="hidden">
+            <h1>LEADERBOARD</h1>
+            <div class="lb-tabs">
+                <button class="lb-tab active" data-tab="local">Local</button>
+                <button class="lb-tab" data-tab="global">Global</button>
+            </div>
+            <div id="lb-local-tab" class="lb-tab-content">
+                <div id="lb-local-list" class="lb-list"></div>
+            </div>
+            <div id="lb-global-tab" class="lb-tab-content hidden">
+                <div id="lb-global-list" class="lb-list"></div>
+            </div>
+            <button id="leaderboard-back-btn">Back</button>
         </div>
     </div>
     <script src="js/powerup.min.js"></script>

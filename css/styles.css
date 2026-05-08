@@ -348,7 +348,8 @@ body {
 #game-over-screen,
 #pause-screen,
 #instructions-screen,
-#customize-screen {
+#customize-screen,
+#leaderboard-screen {
     position: fixed;
     top: 0;
     left: 0;
@@ -369,7 +370,8 @@ body {
 
 #start-screen,
 #instructions-screen,
-#customize-screen {
+#customize-screen,
+#leaderboard-screen {
     background: transparent;
 }
 
@@ -382,7 +384,8 @@ body {
 }
 
 #instructions-screen,
-#customize-screen {
+#customize-screen,
+#leaderboard-screen {
     cursor: default;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -577,4 +580,120 @@ body {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+.lb-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.lb-tab {
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: var(--text);
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+}
+
+.lb-tab.active {
+    border-color: var(--ship);
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--ship);
+}
+
+.lb-tab-content {
+    width: 100%;
+    max-width: 360px;
+    max-height: 45vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.lb-list {
+    width: 100%;
+}
+
+.lb-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.lb-row.current {
+    border-color: var(--flame);
+    background: rgba(245, 158, 11, 0.12);
+}
+
+.lb-row .lb-rank {
+    width: 28px;
+    text-align: center;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    flex-shrink: 0;
+}
+
+.lb-row .lb-name {
+    flex: 1;
+    text-align: left;
+    margin-left: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lb-row .lb-score {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    margin-left: 12px;
+    flex-shrink: 0;
+}
+
+.lb-empty {
+    text-align: center;
+    padding: 24px;
+    opacity: 0.5;
+    font-size: 14px;
+}
+
+.lb-loading {
+    text-align: center;
+    padding: 24px;
+    opacity: 0.6;
+    font-size: 14px;
+}
+
+#gameover-leaderboard {
+    width: 100%;
+    max-width: 320px;
+    margin: 12px 0;
+    max-height: 35vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#gameover-leaderboard h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 12px 0 8px;
+    opacity: 0.7;
+    color: var(--ship);
+}
+
+#gameover-leaderboard .lb-row {
+    padding: 6px 10px;
+    font-size: 13px;
 }

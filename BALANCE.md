@@ -48,7 +48,7 @@ Al destruir un asteroide, se divide en 2 del siguiente nivel inferior:
 ## Jefes Finales
 | Parámetro | Valor |
 |-----------|-------|
-| Aparece cada | 300 puntos |
+| Aparece cada | 1000 puntos |
 | Puntos al destruir | 350 |
 | HP | 350 |
 | Velocidad movimiento | 100 px/s (izq → der) |

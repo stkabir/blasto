@@ -50,6 +50,12 @@ index.html       - Production entry point (loads .min.js)
 - Horizontal speed: 10% of base speed
 - Normalizes to fallSpeed after 500ms
 
+### Boss
+- Appears every: 1000 points
+- HP: 350, Speed: 100 px/s
+- Fires every 0.6s at 225 px/s
+- Reward: 350 points
+
 ### Power-up Durations
 - TRIPLE: 10s, ROCKET: instant, SHIELD: 10s, FREEZE: 8s, LIFE: until hit
 
@@ -67,6 +73,31 @@ index.html       - Production entry point (loads .min.js)
 ### Score System
 - 1 point per bullet hit (no destruction bonus)
 - Score accumulates from damage, not kills
+
+## Leaderboards
+
+### Local Leaderboard
+- Stored in `localStorage` key `blasto_leaderboard`
+- Array of `{name, score, date}`, sorted by score desc, top 5
+- Rendered on game over screen and leaderboard screen
+
+### Global Leaderboard
+- Netlify Functions → API on VPS (Dokploy) → MariaDB
+- `netlify/functions/submit-score.js` — POST score to VPS
+- `netlify/functions/get-leaderboard.js` — GET top 20 from VPS
+- Variable: `LEADERBOARD_API_URL` in Netlify env
+
+### Server (VPS)
+- `server/server.js` — Express API with MariaDB
+- `server/init.sql` — DB schema (auto-created on startup)
+- `server/Dockerfile` — For Dokploy deployment
+- Endpoints: `GET /api/scores` (top 20), `POST /api/scores` (submit)
+- Rate limiting: 10 req/min per IP on POST
+
+### Leaderboard UI
+- Game over screen: shows top 5 local + top 20 global
+- Start screen: "Leaderboard" button opens dedicated screen with local/global tabs
+- Current player score highlighted with gold border
 
 ## Common Issues
 
