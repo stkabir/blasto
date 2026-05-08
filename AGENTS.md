@@ -111,9 +111,12 @@ index.html       - Production entry point (loads .min.js)
 
 ## Commands
 ```bash
-npm run build    # Minify JS for production
-npm run watch    # Watch mode for development
+pnpm install     # Install dependencies (ALWAYS use pnpm, not npm)
+pnpm run build   # Minify JS for production
+pnpm run watch   # Watch mode for development
 ```
+
+**IMPORTANT:** This project uses pnpm. Netlify expects `pnpm-lock.yaml`. Always use `pnpm install` instead of `npm install`.
 
 ## Git Ignore Notes
 - `*.min.js` is gitignored (generated)
