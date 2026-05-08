@@ -32,6 +32,8 @@ class Game {
         this.lbGlobalList = document.getElementById('lb-global-list');
         this.gameoverLocalLb = document.getElementById('gameover-local-lb');
         this.gameoverGlobalLb = document.getElementById('gameover-global-lb');
+        this.gameoverNameInput = document.getElementById('gameover-name-input');
+        this.gameoverBackBtn = document.getElementById('gameover-back-btn');
         this.hud = document.getElementById('hud');
 
         this.playerName = localStorage.getItem('blasto_playerName') || 'Player 1';
@@ -41,10 +43,15 @@ class Game {
         this.playerDesign = localStorage.getItem('blasto_playerDesign') || 'triangle';
         this.bulletStyle = localStorage.getItem('blasto_bulletStyle') || 'dual';
 
+        const savedColor = localStorage.getItem('blasto_playerColor');
+        this.playerColor = savedColor || PLAYER_DESIGNS[this.playerDesign].color;
+
+        this.SHIP_COLORS = ['#22d3ee', '#e879f9', '#a3e635', '#38bdf8'];
+
         this.resize();
         window.addEventListener('resize', () => this.resize());
 
-        this.keys = { touchX: null, touchY: null };
+        this.keys = { touchX: null, touchY: null, left: false, right: false };
         this.setupInput();
 
         this.state = 'start';
@@ -348,11 +355,13 @@ class Game {
             if (this.state === 'start') this.startGame();
         }, { passive: false });
 
-        this.gameOverScreen.addEventListener('click', () => {
+        this.gameOverScreen.addEventListener('click', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
             if (this.state === 'gameover') this.restart();
         });
 
         this.gameOverScreen.addEventListener('touchstart', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
             e.preventDefault();
             if (this.state === 'gameover') this.restart();
         }, { passive: false });
@@ -380,6 +389,17 @@ class Game {
             e.preventDefault();
             e.stopPropagation();
             this.hideInstructions();
+        }, { passive: false });
+
+        this.gameoverBackBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.backToMenu();
+        });
+
+        this.gameoverBackBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.backToMenu();
         }, { passive: false });
 
         this.pauseScreen.addEventListener('click', () => {
@@ -448,6 +468,13 @@ class Game {
                     this.togglePause();
                 }
             }
+            if (e.key === 'ArrowLeft') this.keys.left = true;
+            if (e.key === 'ArrowRight') this.keys.right = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') this.keys.left = false;
+            if (e.key === 'ArrowRight') this.keys.right = false;
         });
     }
 
@@ -516,9 +543,9 @@ class Game {
         }
     }
 
-    saveLocalScore(name, score, designId) {
+    saveLocalScore(name, score, designId, color) {
         const lb = this.getLocalLeaderboard();
-        lb.push({ name, score, designId, date: Date.now() });
+        lb.push({ name, score, designId, color, date: Date.now() });
         lb.sort((a, b) => b.score - a.score);
         const trimmed = lb.slice(0, 5);
         localStorage.setItem('blasto_leaderboard', JSON.stringify(trimmed));
@@ -535,12 +562,12 @@ class Game {
         }
     }
 
-    async submitGlobalScore(name, score, designId) {
+    async submitGlobalScore(name, score, designId, color) {
         try {
             await fetch('https://api.blasto.pro/api/submit-score', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, score, designId }),
+                body: JSON.stringify({ name, score, designId, color }),
             });
         } catch {
         }
@@ -557,12 +584,19 @@ class Game {
             row.className = 'lb-row';
             const isCurrent = entry.name === currentName && entry.score === currentScore;
             if (isCurrent) row.classList.add('current');
+            if (i === 0) row.classList.add('rank-1');
+            else if (i === 1) row.classList.add('rank-2');
+            else if (i === 2) row.classList.add('rank-3');
             let shipHtml = '';
+            let colorHtml = '';
             if (showShip && entry.designId) {
-                shipHtml = `<span class="lb-ship">${this.getShipIconSVG(entry.designId)}</span>`;
+                const color = entry.color || '#22d3ee';
+                shipHtml = `<span class="lb-ship">${this.getShipIconSVG(entry.designId, color)}</span>`;
+                colorHtml = `<span class="lb-color" style="background: ${color}; box-shadow: 0 0 8px ${color};"></span>`;
             }
             row.innerHTML = `
                 <span class="lb-rank">${i + 1}</span>
+                ${colorHtml}
                 ${shipHtml}
                 <span class="lb-name">${this.escapeHtml(entry.name)}</span>
                 <span class="lb-score">${entry.score}</span>
@@ -640,6 +674,42 @@ createDesignSelector() {
         if (!list) return;
         list.innerHTML = '';
 
+        const colorSeparator = document.createElement('div');
+        colorSeparator.className = 'customize-section-separator';
+        colorSeparator.textContent = 'COLOR';
+        list.appendChild(colorSeparator);
+
+        const colorGrid = document.createElement('div');
+        colorGrid.className = 'customize-grid';
+        this.SHIP_COLORS.forEach(color => {
+            const item = document.createElement('div');
+            item.className = 'customize-color-item';
+            item.dataset.color = color;
+
+            const preview = document.createElement('div');
+            preview.className = 'customize-color-preview';
+            preview.style.background = color;
+            preview.style.boxShadow = `0 0 15px ${color}`;
+            item.appendChild(preview);
+
+            if (color === this.playerColor) {
+                item.classList.add('selected');
+            }
+
+            item.addEventListener('click', () => this.selectColor(color));
+            item.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.selectColor(color);
+            }, { passive: false });
+            colorGrid.appendChild(item);
+        });
+        list.appendChild(colorGrid);
+
+        const shipsSeparator = document.createElement('div');
+        shipsSeparator.className = 'customize-section-separator';
+        shipsSeparator.textContent = 'NAVES';
+        list.appendChild(shipsSeparator);
+
         const shipsGrid = document.createElement('div');
         shipsGrid.className = 'customize-grid';
         const designs = Object.values(window.PLAYER_DESIGNS);
@@ -650,7 +720,7 @@ createDesignSelector() {
 
             const preview = document.createElement('div');
             preview.className = 'customize-design-preview';
-            preview.innerHTML = this.getDesignSVG(design);
+            preview.innerHTML = this.getDesignSVG(design, this.playerColor);
             item.appendChild(preview);
 
             if (design.id === this.playerDesign) {
@@ -698,8 +768,8 @@ createDesignSelector() {
         list.appendChild(bulletsGrid);
     }
 
-    getDesignSVG(design) {
-        const color = design.color;
+    getDesignSVG(design, colorOverride) {
+        const color = colorOverride || design.color;
         let path = '';
         switch (design.id) {
             case 'triangle':
@@ -718,22 +788,58 @@ createDesignSelector() {
         return `<svg viewBox="0 0 40 40">${path}</svg>`;
     }
 
-    getShipIconSVG(designId) {
+    getShipIconSVG(designId, colorOverride) {
         const design = window.PLAYER_DESIGNS[designId] || window.PLAYER_DESIGNS.triangle;
-        return this.getDesignSVG(design);
+        return this.getDesignSVG(design, colorOverride);
     }
 
     selectDesign(id) {
         this.playerDesign = id;
         localStorage.setItem('blasto_playerDesign', id);
+        const defaultColor = PLAYER_DESIGNS[id].color;
+        this.playerColor = defaultColor;
+        localStorage.setItem('blasto_playerColor', defaultColor);
         const items = document.querySelectorAll('.customize-design-item');
         items.forEach(item => {
             item.classList.toggle('selected', item.dataset.id === id);
         });
+        this.updateColorPickerSelection();
+        this.updateAllPreviews(this.playerColor);
     }
 
-    getBulletStyleSVG(id) {
-        const color = '#22d3ee';
+    selectColor(color) {
+        this.playerColor = color;
+        localStorage.setItem('blasto_playerColor', color);
+        const items = document.querySelectorAll('.customize-color-item');
+        items.forEach(item => {
+            item.classList.toggle('selected', item.dataset.color === color);
+        });
+        this.updateAllPreviews(color);
+    }
+
+    updateColorPickerSelection() {
+        const items = document.querySelectorAll('.customize-color-item');
+        items.forEach(item => {
+            item.classList.toggle('selected', item.dataset.color === this.playerColor);
+        });
+    }
+
+    updateAllPreviews(color) {
+        document.querySelectorAll('.customize-design-item').forEach((item, i) => {
+            const designId = item.dataset.id;
+            const design = window.PLAYER_DESIGNS[designId];
+            if (design) {
+                item.querySelector('.customize-design-preview').innerHTML = this.getDesignSVG(design, color);
+            }
+        });
+        document.querySelectorAll('.customize-bullet-item').forEach(item => {
+            const bulletId = item.dataset.id;
+            item.querySelector('.customize-bullet-preview').innerHTML = this.getBulletStyleSVG(bulletId, color);
+        });
+    }
+
+    getBulletStyleSVG(id, colorOverride) {
+        const color = colorOverride || '#22d3ee';
         switch (id) {
             case 'glow':
                 return `<svg viewBox="0 0 40 40">
@@ -806,6 +912,7 @@ createDesignSelector() {
 
         this.player = new Player(this.canvas.width / 2, this.canvas.height - 150);
         this.player.setDesign(this.playerDesign);
+        this.player.setColor(this.playerColor);
         this.player.setBulletStyle(this.bulletStyle);
         this.asteroidManager = new AsteroidManager();
         this.bossManager = new BossManager();
@@ -842,7 +949,21 @@ createDesignSelector() {
     }
 
     restart() {
+        const newName = this.gameoverNameInput.value.trim();
+        if (newName) {
+            this.playerName = newName;
+            localStorage.setItem('blasto_playerName', this.playerName);
+            this.playerNameDisplay.textContent = this.playerName;
+            this.playerNameInput.value = this.playerName;
+        }
         this.startGame();
+    }
+
+    backToMenu() {
+        this.gameOverScreen.classList.add('hidden');
+        this.startScreen.classList.remove('hidden');
+        this.playerNameInput.value = this.playerName;
+        this.state = 'start';
     }
 
     update(dt) {
@@ -1144,7 +1265,6 @@ createDesignSelector() {
         this.finalScoreEl.style.transform = 'scale(0.8)';
         this.finalScoreEl.style.transition = 'none';
 
-        document.getElementById('final-score-name').textContent = this.playerName;
         this.gameOverScreen.style.display = '';
         this.gameOverScreen.classList.remove('hidden');
         this.gameOverScreen.style.opacity = '0';
@@ -1155,10 +1275,10 @@ createDesignSelector() {
         this.playerInfo.classList.remove('paused');
         this.hud.classList.add('hidden');
 
-        this.saveLocalScore(this.playerName, this.score, this.playerDesign);
-        this.submitGlobalScore(this.playerName, this.score, this.playerDesign);
+        this.saveLocalScore(this.playerName, this.score, this.playerDesign, this.playerColor);
+        this.submitGlobalScore(this.playerName, this.score, this.playerDesign, this.playerColor);
+        this.gameoverNameInput.value = this.playerName;
         this.renderLocalLeaderboard(this.gameoverLocalLb, this.playerName, this.score);
-        this.renderGlobalLeaderboard(this.gameoverGlobalLb, this.playerName, this.score);
 
         setTimeout(() => {
             this.finalScoreEl.textContent = `${this.score}`;

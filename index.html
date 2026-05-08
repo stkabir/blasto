@@ -27,33 +27,59 @@
         <div id="start-screen">
             <input type="text" id="player-name-input" placeholder="Tu nombre" maxlength="12" autocomplete="off">
             <h1>BLASTO</h1>
-            <p id="start-prompt">Escribe tu nombre arriba y presiona aquí para jugar</p>
+            <p id="start-prompt">Toca la pantalla para despegar</p>
             <button id="design-toggle" class="menu-btn">Personalizar</button>
             <button id="how-to-play-btn" class="menu-btn">Cómo Jugar</button>
             <button id="leaderboard-btn" class="menu-btn">Clasificación</button>
         </div>
         <div id="game-over-screen" class="hidden">
-            <h1>FIN DE JUEGO</h1>
-            <p id="final-score-name">Nombre</p>
-            <p id="final-score">0</p>
-            <div id="gameover-leaderboard">
-                <h3>TOP 5 LOCAL</h3>
-                <div id="gameover-local-lb" class="lb-list"></div>
-                <h3>TOP 20 GLOBAL</h3>
-                <div id="gameover-global-lb" class="lb-list"></div>
+            <div class="screen-content">
+                <h1>GAME OVER</h1>
+                <input type="text" id="gameover-name-input" placeholder="Tu nombre" maxlength="12" autocomplete="off">
+                <p id="final-score">0</p>
+                <div id="gameover-leaderboard">
+                    <h3>TOP 5 LOCAL</h3>
+                    <div id="gameover-local-lb" class="lb-list"></div>
+                </div>
+                <p>Presiona para Reiniciar</p>
             </div>
-            <p>Presiona para Reiniciar</p>
+            <button id="gameover-back-btn" class="screen-back-btn">Volver</button>
         </div>
         <div id="pause-screen" class="hidden">
             <h1>PAUSA</h1>
             <p>Presiona para Continuar</p>
         </div>
-        <div id="instructions-screen" class="hidden">
-            <h1>CÓMO JUGAR</h1>
-            <div class="instructions-controls">
-                <p>Mueve la nave hacia los lados</p>
-                <p>Pierdes si te golpean los asteroides</p>
+<div id="instructions-screen" class="hidden">
+            <div class="screen-content">
+                <div class="instructions-controls">
+                    <p>Mueve la nave hacia los lados</p>
+                    <p>Pierdes si te golpean los asteroides.</p>
+                </div>
+                <div class="instructions-powerups">
+                    <div class="powerup-item">
+                        <span class="powerup-icon-only">⚡</span>
+                        <span class="powerup-label">Disparo Triple</span>
+                    </div>
+                    <div class="powerup-item">
+                        <span class="powerup-icon-only">🚀</span>
+                        <span class="powerup-label">Alto Daño</span>
+                    </div>
+                    <div class="powerup-item">
+                        <span class="powerup-icon-only">🛡</span>
+                        <span class="powerup-label">Invencible</span>
+                    </div>
+                    <div class="powerup-item">
+                        <span class="powerup-icon-only">❄</span>
+                        <span class="powerup-label">Asteroides Lentos</span>
+                    </div>
+                    <div class="powerup-item">
+                        <span class="powerup-icon-only">❤</span>
+                        <span class="powerup-label">Vida Extra</span>
+                    </div>
+                </div>
             </div>
+            <button id="instructions-back-btn" class="screen-back-btn">Volver</button>
+        </div>
             <div class="instructions-powerups">
                 <div class="powerup-item">
                     <span class="powerup-icon-only">⚡</span>
@@ -79,23 +105,25 @@
             <button id="instructions-back-btn">Volver</button>
         </div>
         <div id="customize-screen" class="hidden">
-            <h1>PERSONALIZAR</h1>
-            <div id="customize-design-list"></div>
-            <button id="customize-back-btn">Volver</button>
+            <div class="screen-content" id="customize-content">
+                <div id="customize-design-list"></div>
+            </div>
+            <button id="customize-back-btn" class="screen-back-btn">Volver</button>
         </div>
         <div id="leaderboard-screen" class="hidden">
-            <h1>CLASIFICACIÓN</h1>
-            <div class="lb-tabs">
-                <button class="lb-tab active" data-tab="local">Local</button>
-                <button class="lb-tab" data-tab="global">Global</button>
+            <div class="screen-content">
+                <div class="lb-tabs">
+                    <button class="lb-tab active" data-tab="local">Local</button>
+                    <button class="lb-tab" data-tab="global">Global</button>
+                </div>
+                <div id="lb-local-tab" class="lb-tab-content">
+                    <div id="lb-local-list" class="lb-list"></div>
+                </div>
+                <div id="lb-global-tab" class="lb-tab-content hidden">
+                    <div id="lb-global-list" class="lb-list"></div>
+                </div>
             </div>
-            <div id="lb-local-tab" class="lb-tab-content">
-                <div id="lb-local-list" class="lb-list"></div>
-            </div>
-            <div id="lb-global-tab" class="lb-tab-content hidden">
-                <div id="lb-global-list" class="lb-list"></div>
-            </div>
-            <button id="leaderboard-back-btn">Volver</button>
+            <button id="leaderboard-back-btn" class="screen-back-btn">Volver</button>
         </div>
     </div>
     <script src="js/powerup.min.js"></script>

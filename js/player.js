@@ -82,13 +82,19 @@ class Player {
         this.hasShield = false;
         this.shieldStartTime = 0;
         this.designId = 'triangle';
+        this.color = PLAYER_DESIGNS.triangle.color;
         this.bulletStyle = 'dual';
     }
 
     setDesign(id) {
         if (PLAYER_DESIGNS[id]) {
             this.designId = id;
+            this.color = PLAYER_DESIGNS[id].color;
         }
+    }
+
+    setColor(color) {
+        this.color = color;
     }
 
     setBulletStyle(id) {
@@ -99,6 +105,13 @@ class Player {
 
     update(dt, keys) {
         const speed = PLAYER_CONFIG.speed;
+
+        if (keys.left) {
+            this.targetX = this.x - 100;
+        }
+        if (keys.right) {
+            this.targetX = this.x + 100;
+        }
 
         if (keys.touchX !== null) {
             this.targetX = keys.touchX;
@@ -209,7 +222,7 @@ fireRocket() {
         }
 
         const design = PLAYER_DESIGNS[this.designId] || PLAYER_DESIGNS.triangle;
-        ctx.strokeStyle = design.color;
+        ctx.strokeStyle = this.color;
         ctx.lineWidth = 2;
         design.draw(ctx, this.radius);
 

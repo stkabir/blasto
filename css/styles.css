@@ -136,15 +136,12 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    margin-bottom: 40px;
-    padding: 0 20px;
-    max-width: 320px;
     width: 100%;
 }
 
 .customize-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
     margin-bottom: 8px;
 }
@@ -174,8 +171,8 @@ body {
 }
 
 .customize-design-preview {
-    width: 40px;
-    height: 40px;
+    width: 64px;
+    height: 64px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -184,6 +181,36 @@ body {
 .customize-design-preview svg {
     width: 100%;
     height: 100%;
+}
+
+.customize-color-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(255, 255, 255, 0.05);
+    aspect-ratio: 1;
+}
+
+.customize-color-item:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.customize-color-item.selected {
+    border-color: var(--ship);
+    background: rgba(34, 211, 238, 0.1);
+    box-shadow: 0 0 16px rgba(34, 211, 238, 0.3);
+}
+
+.customize-color-preview {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
 }
 
 .customize-section-separator {
@@ -223,8 +250,8 @@ body {
 }
 
 .customize-bullet-preview {
-    width: 40px;
-    height: 40px;
+    width: 120px;
+    height: 120px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -233,28 +260,6 @@ body {
 .customize-bullet-preview svg {
     width: 100%;
     height: 100%;
-}
-
-#customize-back-btn {
-    background: transparent;
-    border: 2px solid var(--ship);
-    color: var(--text);
-    font-size: 16px;
-    padding: 14px 40px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-bottom: 60px;
-}
-
-#customize-back-btn:hover {
-    background: var(--ship);
-    color: var(--panel);
-    transform: scale(1.05);
-}
-
-#customize-back-btn:active {
-    transform: scale(0.95);
 }
 
 #player-name-input:focus {
@@ -384,19 +389,98 @@ body {
 
 #instructions-screen,
 #customize-screen,
-#leaderboard-screen {
-    cursor: default;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+#leaderboard-screen,
+#game-over-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: flex-start;
-    padding-top: 80px;
-    box-sizing: border-box;
+    padding-top: 60px;
+    padding-bottom: 100px;
+    background: rgba(11, 16, 23, 0.95);
+    color: var(--text);
+    z-index: 100;
+    cursor: default;
 }
 
+#start-screen,
+#instructions-screen,
+#customize-screen,
 #leaderboard-screen {
-    justify-content: center;
-    padding-top: 20px;
-    gap: 24px;
+    background: transparent;
+}
+
+#start-screen > *,
+#game-over-screen > *,
+#pause-screen > * {
+    max-width: 100%;
+    min-width: 0;
+    flex-shrink: 1;
+}
+
+.screen-content {
+    flex: 1;
+    width: 100%;
+    max-width: 400px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 20px;
+}
+
+.screen-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.screen-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.screen-content::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--ship), rgba(34, 211, 238, 0.4));
+    border-radius: 3px;
+    box-shadow: 0 0 6px var(--ship);
+}
+
+.screen-content::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--ship), rgba(34, 211, 238, 0.8));
+}
+
+.screen-content {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ship) rgba(255, 255, 255, 0.05);
+}
+
+.screen-back-btn {
+    flex-shrink: 0;
+    margin-top: auto;
+    background: transparent;
+    border: 2px solid var(--ship);
+    color: var(--text);
+    font-size: 18px;
+    padding: 12px 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.screen-back-btn:hover {
+    background: var(--ship);
+    color: var(--panel);
+    transform: scale(1.05);
+}
+
+.screen-back-btn:active {
+    transform: scale(0.95);
 }
 
 #start-screen h1,
@@ -452,11 +536,11 @@ body {
 
 .instructions-powerups {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 15px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
     margin-bottom: 50px;
     padding: 0 20px;
-    max-width: 600px;
+    max-width: 400px;
     width: 100%;
 }
 
@@ -465,6 +549,12 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 10px;
+}
+
+.powerup-item:last-child {
+    grid-column: 1 / -1;
+    justify-self: center;
+    max-width: 120px;
 }
 
 .powerup-icon-only {
@@ -488,55 +578,28 @@ body {
     letter-spacing: 0.5px;
 }
 
-#instructions-back-btn {
-    background: transparent;
-    border: 2px solid var(--ship);
-    color: var(--text);
-    font-size: 18px;
-    padding: 12px 40px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-#instructions-back-btn:hover {
-    background: var(--ship);
-    color: var(--panel);
-    transform: scale(1.05);
-}
-
-#instructions-back-btn:active {
-    transform: scale(0.95);
-}
-
-#leaderboard-back-btn {
-    background: transparent;
-    border: 2px solid var(--ship);
-    color: var(--text);
-    font-size: 18px;
-    padding: 12px 40px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-top: 0;
-    margin-bottom: 0;
-}
-
-#leaderboard-back-btn:hover {
-    background: var(--ship);
-    color: var(--panel);
-    transform: scale(1.05);
-}
-
-#leaderboard-back-btn:active {
-    transform: scale(0.95);
-}
-
 #game-over-screen h1 {
     color: var(--bullet);
     text-shadow: 0 0 30px var(--bullet);
     text-align: center;
     width: 100%;
+}
+
+#gameover-name-input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--ship);
+    color: var(--text);
+    font-size: 20px;
+    text-align: center;
+    padding: 8px 16px;
+    outline: none;
+    transition: border-color 0.2s;
+    max-width: 200px;
+}
+
+#gameover-name-input:focus {
+    border-bottom-color: var(--flame);
 }
 
 #pause-screen h1 {
@@ -651,11 +714,6 @@ body {
 .lb-tab-content {
     width: 100%;
     max-width: 360px;
-    max-height: 50vh;
-    flex-grow: 1;
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
 }
 
 .lb-list {
@@ -679,6 +737,50 @@ body {
     background: rgba(245, 158, 11, 0.12);
 }
 
+.lb-row.rank-1 .lb-rank,
+.lb-row.rank-1 .lb-score {
+    font-size: 18px;
+    font-weight: 800;
+    color: #FFD700;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.5);
+}
+.lb-row.rank-1 {
+    border: 2px solid rgba(255, 215, 0, 0.5);
+    background: rgba(255, 215, 0, 0.12);
+    animation: rankPulse 2s ease-in-out infinite;
+}
+
+.lb-row.rank-2 .lb-rank,
+.lb-row.rank-2 .lb-score {
+    font-size: 16px;
+    font-weight: 700;
+    color: #C0C0C0;
+    text-shadow: 0 0 16px rgba(192, 192, 192, 0.9), 0 0 32px rgba(192, 192, 192, 0.4);
+}
+.lb-row.rank-2 {
+    border: 2px solid rgba(192, 192, 192, 0.4);
+    background: rgba(192, 192, 192, 0.06);
+    animation: rankPulse 2.5s ease-in-out infinite;
+}
+
+.lb-row.rank-3 .lb-rank,
+.lb-row.rank-3 .lb-score {
+    font-size: 15px;
+    font-weight: 700;
+    color: #CD7F32;
+    text-shadow: 0 0 14px rgba(205, 127, 50, 0.8), 0 0 28px rgba(205, 127, 50, 0.3);
+}
+.lb-row.rank-3 {
+    border: 2px solid rgba(205, 127, 50, 0.4);
+    background: rgba(205, 127, 50, 0.05);
+    animation: rankPulse 3s ease-in-out infinite;
+}
+
+@keyframes rankPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.75; }
+}
+
 .lb-row .lb-rank {
     width: 28px;
     text-align: center;
@@ -699,6 +801,13 @@ body {
 .lb-row .lb-ship svg {
     width: 100%;
     height: 100%;
+}
+
+.lb-row .lb-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
 }
 
 .lb-row .lb-name {
@@ -733,9 +842,9 @@ body {
 
 #gameover-leaderboard {
     width: 100%;
-    max-width: 320px;
+    max-width: 360px;
     margin: 12px 0;
-    max-height: 35vh;
+    max-height: 40vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }
