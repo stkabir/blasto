@@ -361,8 +361,8 @@ body {
     bottom: 0;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     text-align: center;
     background: rgba(11, 16, 23, 0.95);
     color: var(--text);
@@ -379,40 +379,13 @@ body {
     background: transparent;
 }
 
-#start-screen > *,
-#game-over-screen > *,
-#pause-screen > * {
-    max-width: 100%;
-    min-width: 0;
-    flex-shrink: 1;
-}
-
-#instructions-screen,
-#customize-screen,
-#leaderboard-screen,
-#game-over-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding-top: 60px;
-    padding-bottom: 100px;
-    background: rgba(11, 16, 23, 0.95);
-    color: var(--text);
-    z-index: 100;
-    cursor: default;
-}
-
-#start-screen,
 #instructions-screen,
 #customize-screen,
 #leaderboard-screen {
-    background: transparent;
+    justify-content: flex-start;
+    padding-top: 60px;
+    padding-bottom: 100px;
+    cursor: default;
 }
 
 #start-screen > *,
