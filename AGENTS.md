@@ -11,7 +11,7 @@ Blasto is a vertical arcade shooter built with vanilla HTML5 Canvas + JavaScript
 - Use this for coding/debugging
 
 ### Production Build
-- Run `npm run build` to minify JS files to `.min.js`
+- Run `pnpm run build` to minify JS files to `.min.js`
 - Production uses `index.html` which loads `.min.js`
 
 ### Key Files
@@ -82,16 +82,28 @@ index.html       - Production entry point (loads .min.js)
 - Rendered on game over screen and leaderboard screen
 
 ### Global Leaderboard
-- Netlify Functions → MySQL (VPS: 2.24.31.74:3320)
-- `netlify/functions/db.js` — mysql2/promise pool (credentials hardcoded)
-- `netlify/functions/submit-score.js` — POST score directly to MySQL
-- `netlify/functions/get-leaderboard.js` — GET top 20 directly from MySQL
+- VPS API → MySQL (2.24.31.74:3320)
+- API URL: `https://api.blasto.pro/api/`
 - Table: `scores` (id, name, score, created_at, ip_address)
 
 ### Leaderboard UI
 - Game over screen: shows top 5 local + top 20 global
 - Start screen: "Leaderboard" button opens dedicated screen with local/global tabs
 - Current player score highlighted with gold border
+
+## Deployment
+
+### Frontend (blasto.pro)
+- Hosted on Dokploy (VPS)
+- Dockerfile uses nginx:alpine to serve static files
+- Build: esbuild minifies JS on each deploy
+- URL: https://blasto.pro
+
+### API (api.blasto.pro)
+- Separate repo: https://github.com/stkabir/api-blasto
+- Hosted on Dokploy (VPS)
+- Express.js server connecting to MySQL
+- Endpoints: /api/get-leaderboard, /api/submit-score
 
 ## Common Issues
 
@@ -116,8 +128,9 @@ pnpm run build   # Minify JS for production
 pnpm run watch   # Watch mode for development
 ```
 
-**IMPORTANT:** This project uses pnpm. Netlify expects `pnpm-lock.yaml`. Always use `pnpm install` instead of `npm install`.
+**IMPORTANT:** This project uses pnpm.
 
 ## Git Ignore Notes
-- `*.min.js` is gitignored (generated)
+- `node_modules/` is gitignored
 - `index.dev.html` is gitignored (local dev only)
+- `*.min.js` is NOT gitignored (needed for Docker build)
