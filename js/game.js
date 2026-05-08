@@ -588,15 +588,12 @@ class Game {
             else if (i === 1) row.classList.add('rank-2');
             else if (i === 2) row.classList.add('rank-3');
             let shipHtml = '';
-            let colorHtml = '';
             if (showShip && entry.designId) {
                 const color = entry.color || '#22d3ee';
                 shipHtml = `<span class="lb-ship">${this.getShipIconSVG(entry.designId, color)}</span>`;
-                colorHtml = `<span class="lb-color" style="background: ${color}; box-shadow: 0 0 8px ${color};"></span>`;
             }
             row.innerHTML = `
                 <span class="lb-rank">${i + 1}</span>
-                ${colorHtml}
                 ${shipHtml}
                 <span class="lb-name">${this.escapeHtml(entry.name)}</span>
                 <span class="lb-score">${entry.score}</span>
