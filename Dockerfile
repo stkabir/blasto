@@ -5,12 +5,12 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 COPY build.js ./build.js
 COPY js/ ./js/
 
-RUN pnpm run build
+RUN pnpm build
 
 FROM nginx:alpine
 
