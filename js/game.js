@@ -526,7 +526,7 @@ class Game {
 
     async fetchGlobalLeaderboard() {
         try {
-            const res = await fetch('/.netlify/functions/get-leaderboard');
+            const res = await fetch('https://api.blasto.pro/api/get-leaderboard');
             if (!res.ok) throw new Error('Failed');
             return await res.json();
         } catch {
@@ -536,7 +536,7 @@ class Game {
 
     async submitGlobalScore(name, score) {
         try {
-            await fetch('/.netlify/functions/submit-score', {
+            await fetch('https://api.blasto.pro/api/submit-score', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, score }),
@@ -587,11 +587,25 @@ class Game {
         return d.innerHTML;
     }
 
-    init() {
+init() {
         this.highEl.textContent = this.high;
-        this.createDesignSelector();
+        this.setupDesignToggle();
         this.setupCustomizeBack();
-        requestAnimationFrame((t) => this.loop(t));
+        requestAnimationFrame(t => this.loop(t));
+    }
+
+    setupDesignToggle() {
+        const toggleBtn = document.getElementById('design-toggle');
+        if (!toggleBtn) return;
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.showCustomize();
+        });
+        toggleBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.showCustomize();
+        }, { passive: false });
     }
 
 createDesignSelector() {
