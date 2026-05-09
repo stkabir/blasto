@@ -61,12 +61,8 @@ export class Asteroid {
     this.y += this.vy * speedMod * dt;
     this.rotation += this.rotationSpeed * dt;
 
-    if (this.y > window.innerHeight + this.radius * 2) {
-      return false;
-    }
-    if (this.x < -this.radius * 2 || this.x > window.innerWidth + this.radius * 2) {
-      return false;
-    }
+    if (this.y > window.innerHeight + this.radius * 2) return false;
+    if (this.x < -this.radius * 2 || this.x > window.innerWidth + this.radius * 2) return false;
     return true;
   }
 
@@ -77,11 +73,8 @@ export class Asteroid {
 
     ctx.beginPath();
     for (let i = 0; i < this.vertices.length; i++) {
-      if (i === 0) {
-        ctx.moveTo(this.vertices[i].x, this.vertices[i].y);
-      } else {
-        ctx.lineTo(this.vertices[i].x, this.vertices[i].y);
-      }
+      if (i === 0) ctx.moveTo(this.vertices[i].x, this.vertices[i].y);
+      else ctx.lineTo(this.vertices[i].x, this.vertices[i].y);
     }
     ctx.closePath();
 
@@ -124,27 +117,63 @@ export class Asteroid {
   }
 
   getBounds(): { x: number; y: number; width: number; height: number } {
-    return {
-      x: this.x - this.radius,
-      y: this.y - this.radius,
-      width: this.radius * 2,
-      height: this.radius * 2,
-    };
+    return { x: this.x - this.radius, y: this.y - this.radius, width: this.radius * 2, height: this.radius * 2 };
   }
 }
 
-export class AsteroidManager {
-  asteroids: Asteroid[];
-  lastSpawnTime: number;
-  spawnInterval: number;
-  minSpawnInterval: number;
+interface PhaseSpawn {
+  LIGHT: number;
+  MED: number;
+  BLUE: number;
+  PURPLE: number;
+  RED: number;
+}
 
-  constructor() {
-    this.asteroids = [];
-    this.lastSpawnTime = 0;
-    this.spawnInterval = 2000;
-    this.minSpawnInterval = 800;
-  }
+const WAVE_CONFIG: Record<number, [PhaseSpawn, PhaseSpawn, PhaseSpawn]> = {
+  0: [
+    { LIGHT: 3, MED: 1, BLUE: 0, PURPLE: 0, RED: 0 },
+    { LIGHT: 2, MED: 3, BLUE: 0, PURPLE: 0, RED: 0 },
+    { LIGHT: 1, MED: 3, BLUE: 1, PURPLE: 0, RED: 0 },
+  ],
+  1: [
+    { LIGHT: 4, MED: 2, BLUE: 0, PURPLE: 0, RED: 0 },
+    { LIGHT: 3, MED: 4, BLUE: 1, PURPLE: 0, RED: 0 },
+    { LIGHT: 1, MED: 3, BLUE: 2, PURPLE: 1, RED: 0 },
+  ],
+  2: [
+    { LIGHT: 4, MED: 3, BLUE: 1, PURPLE: 0, RED: 0 },
+    { LIGHT: 3, MED: 5, BLUE: 2, PURPLE: 0, RED: 0 },
+    { LIGHT: 1, MED: 4, BLUE: 3, PURPLE: 2, RED: 0 },
+  ],
+  3: [
+    { LIGHT: 5, MED: 3, BLUE: 2, PURPLE: 0, RED: 0 },
+    { LIGHT: 4, MED: 5, BLUE: 3, PURPLE: 1, RED: 0 },
+    { LIGHT: 0, MED: 4, BLUE: 4, PURPLE: 3, RED: 1 },
+  ],
+  4: [
+    { LIGHT: 5, MED: 4, BLUE: 3, PURPLE: 1, RED: 0 },
+    { LIGHT: 4, MED: 6, BLUE: 4, PURPLE: 2, RED: 0 },
+    { LIGHT: 0, MED: 5, BLUE: 5, PURPLE: 4, RED: 2 },
+  ],
+};
+
+const PHASE_PAUSE = 1500;
+const WAVE_PAUSE = 2500;
+
+export class AsteroidManager {
+  asteroids: Asteroid[] = [];
+
+  currentWave: number = 0;
+  currentPhase: number = 0;
+  phaseTimer: number = 0;
+  waveSystemActive: boolean = false;
+  warmupActive: boolean = false;
+  private waitingForBoss: boolean = false;
+
+  onPhaseStart: ((wave: number, phase: number) => void) | null = null;
+  onWaveComplete: ((wave: number) => void) | null = null;
+  onBossWave: ((wave: number) => void) | null = null;
+  onWarmupComplete: (() => void) | null = null;
 
   update(dt: number, frozen: boolean): void {
     for (let i = this.asteroids.length - 1; i >= 0; i--) {
@@ -152,72 +181,140 @@ export class AsteroidManager {
         this.asteroids.splice(i, 1);
       }
     }
+
+    if (this.waitingForBoss) return;
+
+    if (this.warmupActive && this.asteroids.length === 0) {
+      this.warmupActive = false;
+      if (this.onWarmupComplete) this.onWarmupComplete();
+      return;
+    }
+
+    if (!this.waveSystemActive) return;
+
+    if (this.currentPhase === 0) {
+      this.phaseTimer -= dt * 1000;
+      if (this.phaseTimer <= 0) {
+        this.startNextPhaseOrWave();
+      }
+      return;
+    }
+
+    if (this.asteroids.length === 0) {
+      if (this.currentPhase < 3) {
+        this.phaseTimer = PHASE_PAUSE;
+        this.currentPhase = 0;
+      } else {
+        this.phaseTimer = WAVE_PAUSE;
+        this.currentPhase = 0;
+        this.currentWave++;
+        if (this.onWaveComplete) this.onWaveComplete(this.currentWave);
+      }
+    }
   }
 
-  trySpawn(score: number): void {
-    const now = Date.now();
-    const adjustedInterval = Math.max(this.minSpawnInterval, this.spawnInterval - score * 2);
-
-    if (now - this.lastSpawnTime > adjustedInterval) {
-      this.lastSpawnTime = now;
-      this.spawn(score);
-    }
+  startWaveSystem(): void {
+    this.currentWave = 0;
+    this.currentPhase = 0;
+    this.phaseTimer = 0;
+    this.waveSystemActive = true;
+    this.warmupActive = false;
+    this.waitingForBoss = false;
+    this.startNextPhaseOrWave();
   }
 
   spawnInitial(): void {
-    const leftType = this.getRandomTypeForScore(0);
-    const rightType = this.getRandomTypeForScore(0);
-
-    const leftAsteroid = new Asteroid(window.innerWidth * 0.25, -30, leftType);
-    const rightAsteroid = new Asteroid(window.innerWidth * 0.75, -30, rightType);
-
-    const centerX = window.innerWidth / 2;
-    leftAsteroid.vx = (centerX - leftAsteroid.x) * 0.015;
-    leftAsteroid.vy = 60 + Math.random() * 40;
-    rightAsteroid.vx = (centerX - rightAsteroid.x) * 0.015;
-    rightAsteroid.vy = 60 + Math.random() * 40;
-
-    this.asteroids.push(leftAsteroid, rightAsteroid);
+    this.warmupActive = true;
+    const left = new Asteroid(window.innerWidth * 0.25, -30, 'LIGHT');
+    const right = new Asteroid(window.innerWidth * 0.75, -30, 'LIGHT');
+    const cx = window.innerWidth / 2;
+    left.vx = (cx - left.x) * 0.015;
+    left.vy = 60 + Math.random() * 40;
+    right.vx = (cx - right.x) * 0.015;
+    right.vy = 60 + Math.random() * 40;
+    this.asteroids.push(left, right);
   }
 
-  spawn(score: number): void {
-    const x = Math.random() * window.innerWidth;
-    const y = -30 - Math.random() * 100;
-    const type = this.getRandomTypeForScore(score);
-
-    const asteroid = new Asteroid(x, y, type);
-    const centerX = window.innerWidth / 2;
-    asteroid.vx = (centerX - x) * 0.02 + (Math.random() - 0.5) * 30;
-    asteroid.vy = Math.abs(asteroid.vy) || 60 + Math.random() * 40;
-
-    this.asteroids.push(asteroid);
+  notifyBossDefeated(): void {
+    if (!this.waitingForBoss) return;
+    this.waitingForBoss = false;
+    this.phaseTimer = WAVE_PAUSE;
+    this.currentPhase = 0;
+    this.currentWave++;
+    if (this.onWaveComplete) this.onWaveComplete(this.currentWave);
   }
 
-  getRandomTypeForScore(_score: number): AsteroidTypeKey {
-    const rand = Math.random() * 100;
-    if (rand < 40) return 'LIGHT';
-    if (rand < 70) return 'MED';
-    if (rand < 90) return 'BLUE';
-    if (rand < 96) return 'PURPLE';
-    return 'RED';
+  private startNextPhaseOrWave(): void {
+    if (this.currentPhase === 0) {
+      this.currentWave++;
+      this.currentPhase = 1;
+    } else {
+      this.currentPhase++;
+    }
+
+    if (this.currentPhase > 3) {
+      this.currentPhase = 1;
+      this.currentWave++;
+    }
+
+    if (this.currentPhase === 3 && this.currentWave % 5 === 0) {
+      this.waitingForBoss = true;
+      if (this.onBossWave) this.onBossWave(this.currentWave);
+      return;
+    }
+
+    const types = this.getPhaseSpawns(this.currentPhase);
+    this.spawnTypes(types);
+
+    if (this.onPhaseStart) {
+      this.onPhaseStart(this.currentWave, this.currentPhase);
+    }
+  }
+
+  private getPhaseSpawns(phase: number): AsteroidTypeKey[] {
+    const tier = Math.min(4, Math.floor((this.currentWave - 1) / 5));
+    const bonus = (this.currentWave - 1) % 5;
+    const cfg = WAVE_CONFIG[tier][phase - 1];
+    const types: AsteroidTypeKey[] = [];
+
+    const push = (t: AsteroidTypeKey, n: number) => { for (let i = 0; i < n; i++) types.push(t); };
+    push('LIGHT', cfg.LIGHT + bonus);
+    push('MED', cfg.MED + Math.floor(bonus * 0.6));
+    push('BLUE', cfg.BLUE + Math.floor(bonus * 0.4));
+    push('PURPLE', cfg.PURPLE + Math.floor(bonus * 0.2));
+    push('RED', cfg.RED);
+
+    return types;
+  }
+
+  private spawnTypes(types: AsteroidTypeKey[]): void {
+    const delay = Math.max(200, 600 - this.currentWave * 10);
+
+    types.forEach((type, i) => {
+      setTimeout(() => {
+        if (!this.waveSystemActive) return;
+        const x = 40 + Math.random() * (window.innerWidth - 80);
+        const y = -30 - Math.random() * 40;
+        const a = new Asteroid(x, y, type);
+        a.vx = (window.innerWidth / 2 - x) * 0.015 + (Math.random() - 0.5) * 20;
+        a.vy = Math.abs(a.vy) || 50 + Math.random() * 40;
+        this.asteroids.push(a);
+      }, i * delay);
+    });
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    for (const asteroid of this.asteroids) {
-      asteroid.draw(ctx);
-    }
+    for (const a of this.asteroids) a.draw(ctx);
   }
 
   checkBulletCollision(bullets: PlayerBullet[]): { asteroid: Asteroid; bullet: PlayerBullet; index: number } | null {
     for (let i = bullets.length - 1; i >= 0; i--) {
-      const bullet = bullets[i];
+      const b = bullets[i];
       for (let j = this.asteroids.length - 1; j >= 0; j--) {
-        const asteroid = this.asteroids[j];
-        const dx = bullet.x - asteroid.x;
-        const dy = bullet.y - asteroid.y;
-        if (Math.sqrt(dx * dx + dy * dy) < asteroid.radius) {
+        const a = this.asteroids[j];
+        if (Math.hypot(b.x - a.x, b.y - a.y) < a.radius) {
           bullets.splice(i, 1);
-          return { asteroid, bullet, index: j };
+          return { asteroid: a, bullet: b, index: j };
         }
       }
     }
@@ -229,17 +326,20 @@ export class AsteroidManager {
   }
 
   getLargestAsteroid(): Asteroid | null {
-    let largest: Asteroid | null = null;
+    let best: Asteroid | null = null;
     for (const a of this.asteroids) {
-      if (!largest || a.type.level > largest.type.level) {
-        largest = a;
-      }
+      if (!best || a.type.level > best.type.level) best = a;
     }
-    return largest;
+    return best;
   }
 
   clear(): void {
     this.asteroids = [];
-    this.lastSpawnTime = 0;
+    this.currentWave = 0;
+    this.currentPhase = 0;
+    this.phaseTimer = 0;
+    this.waveSystemActive = false;
+    this.warmupActive = false;
+    this.waitingForBoss = false;
   }
 }

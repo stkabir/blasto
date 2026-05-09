@@ -51,9 +51,7 @@ export function createPowerUpIcon(
     div.style.transition = 'opacity 0.4s ease-out, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
     div.style.opacity = '1';
     div.style.transform = 'scale(1)';
-    setTimeout(() => {
-      div.style.transform = 'scale(1)';
-    }, 400);
+    setTimeout(() => { div.style.transform = 'scale(1)'; }, 400);
   });
 
   return div;
@@ -69,16 +67,18 @@ export function updatePowerUpIconStyles(
     const pu = activePowerUps[id];
 
     if (!pu || (pu.remaining <= 0 && id !== 'life')) {
-      element.style.opacity = '0';
-      element.style.transition = 'opacity 0.3s ease-out';
-      setTimeout(() => {
-        if (element.parentNode) {
-          element.parentNode.removeChild(element);
-        }
+      if (!element.dataset.fading) {
+        element.dataset.fading = '1';
+        element.style.opacity = '0';
+        element.style.transition = 'opacity 0.15s ease-out';
+      } else {
+        element.parentNode?.removeChild(element);
         delete icons[id];
-      }, 300);
+      }
       continue;
     }
+
+    delete element.dataset.fading;
 
     const color = pu.type.color;
 

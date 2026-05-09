@@ -74,6 +74,7 @@ class Game {
   acc = 0;
 
   customization: CustomizationState;
+  bossActive: boolean = false;
 
   constructor() {
     this.canvas = document.getElementById('game') as HTMLCanvasElement;
@@ -241,6 +242,7 @@ class Game {
     this.effects = createEffectsState();
     this.combo = { count: 0, lastHitTime: 0 };
     this.powerUpIcons = {};
+    this.bossActive = false;
 
     this.player = new Player(this.canvas.width / 2, this.canvas.height - 150);
     this.player.setDesign(this.customization.playerDesign);
@@ -248,11 +250,18 @@ class Game {
     this.player.setBulletStyle(this.customization.bulletStyle);
 
     this.asteroidManager = new AsteroidManager();
-    this.bossManager = new BossManager();
-    this.bossManager.onSpawn = () => {
-      triggerShake(this.effects, 10, 300);
-      announce(this.effects.announcements, this.canvas.height, this.canvas.width, '¡JEFE!', { color: '#ef4444', fontSize: 80 });
+    this.asteroidManager.onWarmupComplete = () => {
+      this.asteroidManager!.startWaveSystem();
     };
+    this.asteroidManager.onBossWave = (wave: number) => {
+      if (this.bossManager) {
+        this.bossManager.spawn();
+        this.bossActive = true;
+        triggerShake(this.effects, 10, 300);
+        announce(this.effects.announcements, this.canvas.height, this.canvas.width, '¡JEFE!', { color: '#ef4444', fontSize: 80 });
+      }
+    };
+    this.bossManager = new BossManager();
 
     this.powerUpManager = new PowerUpManager();
     this.rockets = [];
@@ -304,7 +313,6 @@ class Game {
     this.bossManager.update(dt, this.player);
     this.powerUpManager.update(dt, frozen);
     this.powerUpManager.updateActive(dt);
-    this.asteroidManager.trySpawn(this.score);
 
     updateRockets(this.rockets, dt, frozen, this.canvas.height);
 
@@ -324,11 +332,15 @@ class Game {
       return;
     }
 
+    if (this.bossActive && this.asteroidManager && this.bossManager && !this.bossManager.boss) {
+      this.bossActive = false;
+      this.asteroidManager.notifyBossDefeated();
+    }
+
     this.score += result;
     if (result > 0) this.updateHUD();
 
     this.powerUpManager.trySpawnPowerUp(this.score);
-    this.bossManager.trySpawn(this.score);
     updateExplosions(this.effects.explosions, dt);
     this.updatePowerUpIndicator();
     updatePowerUpIconStyles(this.powerUpIcons, this.powerUpManager.activePowerUps, Date.now());
@@ -409,6 +421,9 @@ class Game {
 
       if (!this.powerUpIcons[id]) {
         this.powerUpIcons[id] = createPowerUpIcon(id, pu, this.powerupIndicator);
+      } else {
+        delete this.powerUpIcons[id].dataset.fading;
+        this.powerUpIcons[id].style.opacity = '1';
       }
     }
   }
