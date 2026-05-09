@@ -47,6 +47,12 @@ async function build() {
     if (fs.existsSync(path.join(__dirname, 'index.html'))) {
       fs.copyFileSync(path.join(__dirname, 'index.html'), path.join(__dirname, 'www', 'index.html'));
     }
+    for (const f of ['favicon.svg', 'favicon.png']) {
+      const src = path.join(__dirname, f);
+      if (fs.existsSync(src)) {
+        fs.copyFileSync(src, path.join(__dirname, 'www', f));
+      }
+    }
 
     console.log('Copied assets to www/');
     console.log('\nDone! Production ready.');
