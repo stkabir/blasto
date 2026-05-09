@@ -59,6 +59,7 @@ export function checkAllCollisions(
     addFloatingText(effects.floatingTexts, asteroid.x, asteroid.y - asteroid.radius, `+${PLAYER_CONFIG.bulletDamage}`);
 
     if (destroyed) {
+      scoreIncrement += asteroid.type.hp;
       const shakeIntensity = asteroid.type.level <= 2 ? 4 : asteroid.type.level <= 3 ? 6 : 10;
       triggerShake(effects, shakeIntensity, 100);
       effects.explosions.push(createExplosion(asteroid.x, asteroid.y, asteroid.type.color));
@@ -82,6 +83,7 @@ export function checkAllCollisions(
       `+${PLAYER_CONFIG.bulletDamage}`
     );
     if (destroyed) {
+      scoreIncrement += 500;
       triggerShake(effects, 12, 200);
       effects.explosions.push(createExplosion(
         bossManager.boss.x + bossManager.boss.width / 2,

@@ -187,6 +187,8 @@ class Game {
       document.getElementById('lb-global-list')!,
       this.playerName,
       this.score,
+      this.customization.playerDesign,
+      this.customization.playerColor,
     );
     const localTab = this.leaderboardScreen.querySelector('[data-tab="local"]');
     const globalTab = this.leaderboardScreen.querySelector('[data-tab="global"]');
@@ -337,7 +339,8 @@ class Game {
       this.asteroidManager.notifyBossDefeated();
     }
 
-    this.score += result;
+    const mult = 1 + (this.asteroidManager?.currentWave ?? 0) * 0.05;
+    this.score += Math.floor(result * mult);
     if (result > 0) this.updateHUD();
 
     this.powerUpManager.trySpawnPowerUp(this.score);
@@ -348,7 +351,7 @@ class Game {
     addTrailParticle(this.effects, this.player);
   }
 
-  gameOver(): void {
+  async gameOver(): Promise<void> {
     this.state = 'gameover';
     triggerFlash(this.effects, 0.6);
     triggerShake(this.effects, 12, 300);
@@ -384,12 +387,14 @@ class Game {
     this.hud.classList.add('hidden');
 
     saveLocalScore(this.playerName, this.score, this.customization.playerDesign, this.customization.playerColor);
-    submitGlobalScore(this.playerName, this.score, this.customization.playerDesign, this.customization.playerColor);
+    await submitGlobalScore(this.playerName, this.score, this.customization.playerDesign, this.customization.playerColor);
     this.gameoverNameInput.value = this.playerName;
-    renderGlobalLeaderboard(
+    await renderGlobalLeaderboard(
       document.getElementById('gameover-local-lb')!,
       this.playerName,
       this.score,
+      this.customization.playerDesign,
+      this.customization.playerColor,
     );
 
     setTimeout(() => {

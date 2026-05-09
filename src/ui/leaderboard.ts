@@ -89,6 +89,8 @@ export async function renderGlobalLeaderboard(
   container: HTMLElement,
   currentName: string,
   currentScore: number,
+  currentDesignId: string,
+  currentColor: string,
 ): Promise<void> {
   container.innerHTML = '<div class="lb-loading">Cargando...</div>';
   const data = await fetchGlobalLeaderboard();
@@ -96,5 +98,13 @@ export async function renderGlobalLeaderboard(
     container.innerHTML = '<div class="lb-empty">No disponible</div>';
     return;
   }
+
+  const found = data.some(e => e.name === currentName && e.score === currentScore);
+  if (!found && currentScore > 0) {
+    data.push({ name: currentName, score: currentScore, designId: currentDesignId, color: currentColor, date: Date.now() });
+    data.sort((a, b) => b.score - a.score);
+    if (data.length > 100) data.pop();
+  }
+
   renderLeaderboardRows(container, data, currentName, currentScore, true);
 }
