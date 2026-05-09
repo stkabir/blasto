@@ -177,8 +177,8 @@ body {
 }
 
 .customize-design-preview {
-    width: 64px;
-    height: 64px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -208,16 +208,11 @@ body {
 }
 
 .customize-bullet-preview {
-    width: 88px;
-    height: 88px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-.customize-bullet-item[data-id="beam"] .customize-bullet-preview {
-    width: 64px;
-    height: 64px;
 }
 
 .customize-bullet-preview svg {
@@ -263,7 +258,7 @@ body {
     display: block;
 }
 
-@media (min-width: 420px) {
+@media (min-width: 350px) {
     .customize-grid {
         grid-template-columns: repeat(3, 1fr);
     }
@@ -413,7 +408,7 @@ body {
     align-items: center;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 0 20px;
+    padding: 0 8px;
     touch-action: pan-y;
 }
 
