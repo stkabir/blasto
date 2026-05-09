@@ -8,5 +8,6 @@
       </feMerge>
     </filter>
   </defs>
+  <rect width="32" height="32" fill="#0b1017" />
   <polygon points="16,0 0,32 32,32" fill="#16a34a" filter="url(#glow)" stroke="#22c55e" stroke-width="0.5" />
 </svg>
