@@ -229,7 +229,7 @@ fireRocket() {
         ctx.restore();
 
         for (const b of this.bullets) {
-            this.drawBullet(ctx, b, design.color);
+            this.drawBullet(ctx, b, this.color);
         }
     }
 

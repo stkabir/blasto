@@ -793,9 +793,6 @@ createDesignSelector() {
     selectDesign(id) {
         this.playerDesign = id;
         localStorage.setItem('blasto_playerDesign', id);
-        const defaultColor = PLAYER_DESIGNS[id].color;
-        this.playerColor = defaultColor;
-        localStorage.setItem('blasto_playerColor', defaultColor);
         const items = document.querySelectorAll('.customize-design-item');
         items.forEach(item => {
             item.classList.toggle('selected', item.dataset.id === id);
