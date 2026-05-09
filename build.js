@@ -40,9 +40,13 @@ async function build() {
     console.log('Built: dist/game.js (dev)');
     console.log('Built: dist/game.min.js (prod)');
 
-    copyDir(path.join(__dirname, 'css'), path.join(__dirname, 'www', 'css'));
     copyDir(path.join(__dirname, 'dist'), path.join(__dirname, 'www', 'dist'));
-    fs.copyFileSync(path.join(__dirname, 'index.html'), path.join(__dirname, 'www', 'index.html'));
+    if (fs.existsSync(path.join(__dirname, 'css'))) {
+      copyDir(path.join(__dirname, 'css'), path.join(__dirname, 'www', 'css'));
+    }
+    if (fs.existsSync(path.join(__dirname, 'index.html'))) {
+      fs.copyFileSync(path.join(__dirname, 'index.html'), path.join(__dirname, 'www', 'index.html'));
+    }
 
     console.log('Copied assets to www/');
     console.log('\nDone! Production ready.');
