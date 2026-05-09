@@ -169,7 +169,7 @@ class Game {
             vy: 20 + Math.random() * 30,
             alpha: 0.8,
             size: 2 + Math.random() * 2,
-            color: design.color
+            color: this.player.color
         });
     }
 
