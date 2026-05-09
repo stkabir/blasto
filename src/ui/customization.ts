@@ -105,11 +105,40 @@ export function createCustomizeList(
   if (!list) return;
   list.innerHTML = '';
 
-  const colorSeparator = document.createElement('div');
-  colorSeparator.className = 'customize-section-separator';
-  colorSeparator.textContent = 'COLOR';
-  list.appendChild(colorSeparator);
+  const tabBar = document.createElement('div');
+  tabBar.className = 'customize-tabs';
 
+  const tabConfig = [
+    { key: 'color', label: 'COLOR' },
+    { key: 'design', label: 'NAVES' },
+    { key: 'bullet', label: 'DISPAROS' },
+  ];
+
+  const sectionMap = new Map<string, HTMLElement>();
+  const tabMap = new Map<string, HTMLElement>();
+
+  tabConfig.forEach((config, index) => {
+    const tab = document.createElement('button');
+    tab.className = 'customize-tab';
+    tab.dataset.tab = config.key;
+    tab.textContent = config.label;
+    if (index === 0) tab.classList.add('active');
+    tab.addEventListener('click', () => {
+      tabBar.querySelectorAll('.customize-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      sectionMap.forEach((section, key) => {
+        section.classList.toggle('active', key === config.key);
+      });
+    });
+    tabBar.appendChild(tab);
+    tabMap.set(config.key, tab);
+  });
+
+  list.appendChild(tabBar);
+
+  const colorSection = document.createElement('div');
+  colorSection.className = 'customize-section active';
+  colorSection.dataset.section = 'color';
   const colorGrid = document.createElement('div');
   colorGrid.className = 'customize-grid';
   SHIP_COLORS.forEach(color => {
@@ -128,19 +157,15 @@ export function createCustomizeList(
     }
 
     item.addEventListener('click', () => onSelectColor(color));
-    item.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      onSelectColor(color);
-    }, { passive: false });
     colorGrid.appendChild(item);
   });
-  list.appendChild(colorGrid);
+  colorSection.appendChild(colorGrid);
+  list.appendChild(colorSection);
+  sectionMap.set('color', colorSection);
 
-  const shipsSeparator = document.createElement('div');
-  shipsSeparator.className = 'customize-section-separator';
-  shipsSeparator.textContent = 'NAVES';
-  list.appendChild(shipsSeparator);
-
+  const designSection = document.createElement('div');
+  designSection.className = 'customize-section';
+  designSection.dataset.section = 'design';
   const shipsGrid = document.createElement('div');
   shipsGrid.className = 'customize-grid';
   const designs = Object.values(PLAYER_DESIGNS);
@@ -159,19 +184,15 @@ export function createCustomizeList(
     }
 
     item.addEventListener('click', () => onSelectDesign(design.id));
-    item.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      onSelectDesign(design.id);
-    }, { passive: false });
     shipsGrid.appendChild(item);
   });
-  list.appendChild(shipsGrid);
+  designSection.appendChild(shipsGrid);
+  list.appendChild(designSection);
+  sectionMap.set('design', designSection);
 
-  const separator = document.createElement('div');
-  separator.className = 'customize-section-separator';
-  separator.textContent = 'DISPAROS';
-  list.appendChild(separator);
-
+  const bulletSection = document.createElement('div');
+  bulletSection.className = 'customize-section';
+  bulletSection.dataset.section = 'bullet';
   const bulletsGrid = document.createElement('div');
   bulletsGrid.className = 'customize-grid';
   const bulletStyles = Object.values(BULLET_STYLES);
@@ -190,11 +211,9 @@ export function createCustomizeList(
     }
 
     item.addEventListener('click', () => onSelectBulletStyle(style.id));
-    item.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      onSelectBulletStyle(style.id);
-    }, { passive: false });
     bulletsGrid.appendChild(item);
   });
-  list.appendChild(bulletsGrid);
+  bulletSection.appendChild(bulletsGrid);
+  list.appendChild(bulletSection);
+  sectionMap.set('bullet', bulletSection);
 }
