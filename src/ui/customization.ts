@@ -19,6 +19,19 @@ function getBulletStyleSVG(id: string, colorOverride: string): string {
         <line x1="20" y1="32" x2="20" y2="8" stroke="${color}" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
         <ellipse cx="20" cy="20" rx="5" ry="8" fill="${color}"/>
       </svg>`;
+    case 'beam':
+      return `<svg viewBox="0 0 40 40">
+        <line x1="20" y1="34" x2="20" y2="4" stroke="white" stroke-width="6" opacity="0.15" stroke-linecap="round"/>
+        <line x1="20" y1="34" x2="20" y2="4" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      </svg>`;
+    case 'spark':
+      return `<svg viewBox="0 0 40 40">
+        <circle cx="20" cy="20" r="3.5" fill="${color}"/>
+        <circle cx="14" cy="14" r="1.5" fill="${color}" opacity="0.6"/>
+        <circle cx="26" cy="14" r="1.5" fill="${color}" opacity="0.6"/>
+        <circle cx="14" cy="26" r="1.5" fill="${color}" opacity="0.6"/>
+        <circle cx="26" cy="26" r="1.5" fill="${color}" opacity="0.6"/>
+      </svg>`;
     case 'dual':
     default:
       return `<svg viewBox="0 0 40 40">

@@ -134,11 +134,6 @@ export class Player {
       b.x += b.vx * dt;
       b.y += b.vy * dt;
 
-      if (this.bulletStyle === 'elongated') {
-        b.history.unshift({ x: b.x, y: b.y });
-        if (b.history.length > 8) b.history.pop();
-      }
-
       if (b.y < -20 || b.y > window.innerHeight + 20 ||
           b.x < -20 || b.x > window.innerWidth + 20) {
         this.bullets.splice(i, 1);
@@ -185,24 +180,61 @@ export class Player {
         ctx.fill();
         break;
 
-      case 'elongated':
+      case 'elongated': {
+        const len = 25;
+        const speed = Math.hypot(b.vx, b.vy) || 1;
+        const tx = b.x - (b.vx / speed) * len;
+        const ty = b.y - (b.vy / speed) * len;
+
         ctx.strokeStyle = color;
         ctx.lineWidth = 4;
         ctx.lineCap = 'round';
+        ctx.globalAlpha = 0.3;
         ctx.beginPath();
-        for (let i = 0; i < b.history.length; i++) {
-          const point = b.history[i];
-          ctx.globalAlpha = (b.history.length - i) / b.history.length * 0.6;
-          if (i === 0) ctx.moveTo(point.x, point.y);
-          else ctx.lineTo(point.x, point.y);
-        }
+        ctx.moveTo(tx, ty);
+        ctx.lineTo(b.x, b.y);
         ctx.stroke();
         ctx.globalAlpha = 1;
+
         ctx.fillStyle = color;
         ctx.beginPath();
         ctx.ellipse(b.x, b.y, b.radius * 1.3, b.radius * 0.8, 0, 0, Math.PI * 2);
         ctx.fill();
         break;
+      }
+
+      case 'beam':
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 12;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(b.x, b.y + b.radius);
+        ctx.lineTo(b.x, b.y - 30);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        break;
+
+      case 'spark': {
+        const t = Date.now() / 80;
+        for (let s = 0; s < 4; s++) {
+          const angle = t + (s / 4) * Math.PI * 2;
+          const dist = 5 + Math.sin(t * 3 + s) * 2;
+          const sx = b.x + Math.cos(angle) * dist;
+          const sy = b.y + Math.sin(angle) * dist;
+          ctx.globalAlpha = 0.6;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(sx, sy, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
 
       case 'dual':
       default:

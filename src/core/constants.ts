@@ -99,15 +99,57 @@ function drawHexagon(ctx: CanvasRenderingContext2D, r: number): void {
   ctx.stroke();
 }
 
+function drawStar(ctx: CanvasRenderingContext2D, r: number): void {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const angle = (Math.PI / 5) * i - Math.PI / 2;
+    const radius = i % 2 === 0 ? r : r * 0.45;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+}
+
+function drawCrescent(ctx: CanvasRenderingContext2D, r: number): void {
+  ctx.beginPath();
+  ctx.arc(0, 0, r, -0.6, Math.PI + 0.6);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(r * 0.3, 0, r * 0.65, -0.8, Math.PI + 0.8);
+  ctx.stroke();
+}
+
+function drawCrux(ctx: CanvasRenderingContext2D, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(0, -r);
+  ctx.lineTo(r * 0.25, -r * 0.2);
+  ctx.lineTo(r * 0.85, 0);
+  ctx.lineTo(r * 0.25, r * 0.2);
+  ctx.lineTo(0, r * 0.85);
+  ctx.lineTo(-r * 0.25, r * 0.2);
+  ctx.lineTo(-r * 0.85, 0);
+  ctx.lineTo(-r * 0.25, -r * 0.2);
+  ctx.closePath();
+  ctx.stroke();
+}
+
 export const PLAYER_DESIGNS: Record<string, PlayerDesign> = {
-  triangle: { id: 'triangle', name: 'Triángulo', color: '#22d3ee', draw: drawTriangle },
-  diamond:  { id: 'diamond',  name: 'Diamante',  color: '#e879f9', draw: drawDiamond },
-  wing:     { id: 'wing',     name: 'Ala',       color: '#a3e635', draw: drawWing },
-  hexagon:  { id: 'hexagon',  name: 'Hexágono',  color: '#38bdf8', draw: drawHexagon },
+  triangle:  { id: 'triangle',  name: 'Triángulo',  color: '#22d3ee', draw: drawTriangle },
+  diamond:   { id: 'diamond',   name: 'Diamante',   color: '#e879f9', draw: drawDiamond },
+  wing:      { id: 'wing',      name: 'Ala',        color: '#a3e635', draw: drawWing },
+  hexagon:   { id: 'hexagon',   name: 'Hexágono',   color: '#38bdf8', draw: drawHexagon },
+  star:      { id: 'star',      name: 'Estrella',   color: '#facc15', draw: drawStar },
+  crescent:  { id: 'crescent',  name: 'Media Luna', color: '#cbd5e1', draw: drawCrescent },
+  crux:      { id: 'crux',      name: 'Cruz',       color: '#f43f5e', draw: drawCrux },
 };
 
 export const BULLET_STYLES: Record<string, BulletStyle> = {
   glow:      { id: 'glow',      name: 'Brillo' },
   elongated: { id: 'elongated', name: 'Alargado' },
   dual:      { id: 'dual',      name: 'Doble' },
+  beam:      { id: 'beam',      name: 'Láser' },
+  spark:     { id: 'spark',     name: 'Chispa' },
 };
