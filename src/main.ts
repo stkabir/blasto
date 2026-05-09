@@ -386,7 +386,7 @@ class Game {
     saveLocalScore(this.playerName, this.score, this.customization.playerDesign, this.customization.playerColor);
     submitGlobalScore(this.playerName, this.score, this.customization.playerDesign, this.customization.playerColor);
     this.gameoverNameInput.value = this.playerName;
-    renderLocalLeaderboard(
+    renderGlobalLeaderboard(
       document.getElementById('gameover-local-lb')!,
       this.playerName,
       this.score,

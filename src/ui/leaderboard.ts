@@ -20,7 +20,7 @@ export function saveLocalScore(name: string, score: number, designId: string, co
 
 export async function fetchGlobalLeaderboard(): Promise<LeaderboardEntry[] | null> {
   try {
-    const res = await fetch('https://api.blasto.pro/api/get-leaderboard');
+    const res = await fetch('https://api.blasto.pro/api/get-leaderboard?limit=100');
     if (!res.ok) throw new Error('Failed');
     return await res.json();
   } catch {
