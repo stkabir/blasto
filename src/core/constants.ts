@@ -52,6 +52,7 @@ export const POWERUP_LIFE_SCORE = 150;
 export const POWERUP_LIFE_CHANCE = 0.12;
 export const POWERUP_REGULAR_CHANCE = 0.25;
 export const POWERUP_HP = 7;
+export const LIFE_INVULNERABILITY_DURATION = 4000;
 
 export const SHIP_COLORS = ['#22d3ee', '#e879f9', '#a3e635', '#818cf8', '#facc15', '#fb923c', '#f43f5e', '#cbd5e1', '#10b981', '#8b5cf6'];
 

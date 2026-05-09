@@ -13,6 +13,7 @@ export class Player {
   designId: string;
   color: string;
   bulletStyle: string;
+  invulnerableUntil: number = 0;
 
   constructor(x: number, y: number) {
     this.x = x;
@@ -42,6 +43,10 @@ export class Player {
     if (BULLET_STYLES[id]) {
       this.bulletStyle = id;
     }
+  }
+
+  isInvulnerable(): boolean {
+    return Date.now() < this.invulnerableUntil;
   }
 
   update(dt: number, keys: GameInput, frozen: boolean, hasTripleActive: boolean): void {
@@ -155,10 +160,18 @@ export class Player {
       ctx.fill();
     }
 
+    if (this.isInvulnerable()) {
+      ctx.globalAlpha = Math.floor(Date.now() / 150) % 2 === 0 ? 1 : 0.25;
+    }
+
     const design = PLAYER_DESIGNS[this.designId] || PLAYER_DESIGNS.triangle;
     ctx.strokeStyle = this.color;
     ctx.lineWidth = 2;
     design.draw(ctx, this.radius);
+
+    if (this.isInvulnerable()) {
+      ctx.globalAlpha = 1;
+    }
 
     ctx.restore();
 
@@ -261,5 +274,6 @@ export class Player {
     this.targetX = x;
     this.bullets = [];
     this.aimAngle = -Math.PI / 2;
+    this.invulnerableUntil = 0;
   }
 }

@@ -1,4 +1,4 @@
-import { PLAYER_CONFIG } from '../core/constants.js';
+import { PLAYER_CONFIG, LIFE_INVULNERABILITY_DURATION } from '../core/constants.js';
 import type { Player } from '../entities/player.js';
 import type { Asteroid } from '../entities/asteroid.js';
 import type { AsteroidManager } from '../entities/asteroid.js';
@@ -134,8 +134,10 @@ export function checkAllCollisions(
     const dy = player.y - asteroid.y;
     if (Math.sqrt(dx * dx + dy * dy) < player.radius + asteroid.radius) {
       if (powerUpManager.hasActive('shield')) continue;
+      if (player.isInvulnerable()) continue;
       if (powerUpManager.hasActive('life')) {
         delete powerUpManager.activePowerUps.life;
+        player.invulnerableUntil = Date.now() + LIFE_INVULNERABILITY_DURATION;
         return scoreIncrement;
       }
       return -1;
@@ -144,8 +146,10 @@ export function checkAllCollisions(
 
   if (bossManager.checkPlayerCollision(player)) {
     if (powerUpManager.hasActive('shield')) return scoreIncrement;
+    if (player.isInvulnerable()) return scoreIncrement;
     if (powerUpManager.hasActive('life')) {
       delete powerUpManager.activePowerUps.life;
+      player.invulnerableUntil = Date.now() + LIFE_INVULNERABILITY_DURATION;
       return scoreIncrement;
     }
     return -1;
