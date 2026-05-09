@@ -2,34 +2,66 @@ const esbuild = require('esbuild');
 const fs = require('fs');
 const path = require('path');
 
-const files = ['game.js', 'player.js', 'asteroid.js', 'boss.js', 'powerup.js'];
-
 async function build() {
   const isWatch = process.argv.includes('--watch');
 
-  for (const file of files) {
-    const inputPath = path.join(__dirname, 'js', file);
-    const outputPath = path.join(__dirname, 'js', file.replace('.js', '.min.js'));
+  const devOptions = {
+    entryPoints: [path.join(__dirname, 'src', 'main.ts')],
+    outfile: path.join(__dirname, 'dist', 'game.js'),
+    bundle: true,
+    minify: false,
+    sourcemap: 'inline',
+    legalComments: 'none',
+    target: 'es2020',
+    format: 'iife',
+  };
 
-    const options = {
-      entryPoints: [inputPath],
-      outfile: outputPath,
-      minify: true,
-      legalComments: 'none',
-    };
+  const prodOptions = {
+    entryPoints: [path.join(__dirname, 'src', 'main.ts')],
+    outfile: path.join(__dirname, 'dist', 'game.min.js'),
+    bundle: true,
+    minify: true,
+    sourcemap: false,
+    legalComments: 'none',
+    target: 'es2020',
+    format: 'iife',
+  };
 
-    if (isWatch) {
-      const ctx = await esbuild.context(options);
-      await ctx.watch();
-      console.log(`Watching ${file}...`);
-    } else {
-      await esbuild.build(options);
-      console.log(`Obfuscated: ${file} -> ${path.basename(outputPath)}`);
-    }
+  if (isWatch) {
+    devOptions.sourcemap = 'inline';
+    const ctx = await esbuild.context(devOptions);
+    await ctx.watch();
+    console.log('Watching src/main.ts...');
+  } else {
+    await Promise.all([
+      esbuild.build(devOptions),
+      esbuild.build(prodOptions),
+    ]);
+    console.log('Built: dist/game.js (dev)');
+    console.log('Built: dist/game.min.js (prod)');
+
+    copyDir(path.join(__dirname, 'css'), path.join(__dirname, 'www', 'css'));
+    copyDir(path.join(__dirname, 'dist'), path.join(__dirname, 'www', 'dist'));
+    fs.copyFileSync(path.join(__dirname, 'index.html'), path.join(__dirname, 'www', 'index.html'));
+
+    console.log('Copied assets to www/');
+    console.log('\nDone! Production ready.');
   }
+}
 
-  if (!isWatch) {
-    console.log('\nDone! Update HTML to use .min.js files');
+function copyDir(src, dest) {
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest, { recursive: true });
+  }
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDir(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
   }
 }
 

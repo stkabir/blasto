@@ -1,32 +1,70 @@
 # Blasto - Agent Instructions
 
 ## Project Overview
-Blasto is a vertical arcade shooter built with vanilla HTML5 Canvas + JavaScript. No frameworks, no bundlers required for development.
+Blasto is a vertical arcade shooter built with TypeScript + HTML5 Canvas. ES modules, esbuild bundler.
+
+## Project Structure
+
+```
+src/
+  core/
+    types.ts            - Shared TypeScript interfaces/types
+    constants.ts        - Game configuration, ship designs, asteroid types, etc.
+    input.ts            - Input manager (keyboard, mouse, touch)
+  entities/
+    player.ts           - Player ship, designs, shooting
+    asteroid.ts         - Asteroid types, physics, asteroid manager
+    boss.ts             - Boss enemies, boss manager
+    powerup.ts          - Power-up system, activation, manager
+  systems/
+    collision.ts        - Collision detection + rocket tracking
+    effects.ts          - Particles, trail, explosions, shake, flash, announcements
+  ui/
+    leaderboard.ts      - Local (localStorage) + global (API) leaderboard
+    customization.ts    - Ship design/color/bullet style selector UI
+    powerup-indicator.ts - Power-up icon DOM management
+  background.ts         - Parallax starfield
+  main.ts               - Entry point, Game orchestrator class
+dist/
+  game.min.js           - Production bundle (esbuild output)
+css/
+  styles.css            - UI styles (HUD, screens, leaderboard, customization)
+index.html              - Production entry point
+index.dev.html          - Dev entry point (loads dist/game.js from dev server)
+build.js                - esbuild production build script
+dev.js                  - esbuild dev server script
+```
 
 ## Development Workflow
 
-### Local Development (index.dev.html)
-- **URL**: `http://localhost/juegos/blasto/index.dev.html`
-- Loads `.js` files directly (no minification)
-- Use this for coding/debugging
+### Dev Server (recommended)
+- Run `pnpm run dev` → starts esbuild dev server at `http://localhost:3000`
+- Open `http://localhost:3000/index.dev.html`
+- Hot reload on file changes
 
 ### Production Build
-- Run `pnpm run build` to minify JS files to `.min.js`
-- Production uses `index.html` which loads `.min.js`
+- Run `pnpm run build` → outputs to `dist/game.min.js` + copies to `www/`
+- `pnpm run watch` → watch mode for production
+- Type check: `pnpm exec tsc --noEmit`
 
-### Key Files
-```
-js/game.js       - Core game loop, state management, collisions
-js/player.js     - Player ship, shooting (fireRate, bulletDamage)
-js/asteroid.js   - Asteroid types, spawn, split, fallSpeed, weight
-js/boss.js       - Boss enemies
-js/powerup.js    - Power-up system, activation, durations
-css/styles.css   - UI (HUD, power-up indicators, screens)
-index.dev.html   - Development entry point (loads .js)
-index.html       - Production entry point (loads .min.js)
-```
+## Android APK
 
-## Game Balance (Current State)
+### Prerequisites
+- Android Studio (for SDK + build tools)
+- Java JDK 17
+
+### Build APK
+1. `pnpm run cap-sync` — builds JS + syncs to Android project
+2. Open `android/` in Android Studio
+3. Build → Build APK(s)
+4. Output at `android/app/build/outputs/apk/debug/app-debug.apk`
+
+### Capacitor Config
+- App ID: `pro.blasto.game`
+- Portrait + fullscreen immersive mode
+- Keep screen on during gameplay
+
+## Game Balance
 
 ### Player
 - Fire rate: 33ms (30 bullets/sec)
@@ -45,92 +83,69 @@ index.html       - Production entry point (loads .min.js)
 ### Asteroid Spawn Probabilities
 - LIGHT: 40%, MED: 30%, BLUE: 20%, PURPLE: 6%, RED: 4%
 
-### Asteroid Split Physics
-- Split impulse: -80 to -120 vy (upward boost)
-- Horizontal speed: 10% of base speed
-- Normalizes to fallSpeed after 500ms
-
 ### Boss
 - Appears every: 1000 points
 - HP: 350, Speed: 100 px/s
 - Fires every 0.6s at 225 px/s
-- Reward: 350 points
 
 ### Power-up Durations
 - TRIPLE: 10s, ROCKET: instant, SHIELD: 10s, FREEZE: 8s, LIFE: until hit
 
-### Rocket Behavior
-- Damage equals target's current HP → instant kill
-- Splits normally on destruction (no special behavior)
-
-### Power-up Indicator
-- Glow-based system (box-shadow, background, border, text-shadow)
-- Opacity decreases with time: `0.3 + (progress * 0.7)`
-- Blinking effect when ≤ 3s remaining: `Math.sin(now / 200)` for smooth pulse
-- Fade-out on expiration
-- LIFE icon stays at full opacity (infinite until hit)
-
 ### Score System
-- 1 point per bullet hit (no destruction bonus)
+- 1 point per bullet hit
 - Score accumulates from damage, not kills
 
 ## Leaderboards
 
 ### Local Leaderboard
-- Stored in `localStorage` key `blasto_leaderboard`
-- Array of `{name, score, date}`, sorted by score desc, top 5
-- Rendered on game over screen and leaderboard screen
+- `localStorage` key `blasto_leaderboard`
+- Top 5 entries, sorted by score desc
 
 ### Global Leaderboard
-- VPS API → MySQL (2.24.31.74:3320)
-- API URL: `https://api.blasto.pro/api/`
-- Table: `scores` (id, name, score, created_at, ip_address)
+- API: `https://api.blasto.pro/api/`
+- Endpoints: `/api/get-leaderboard`, `/api/submit-score`
 
-### Leaderboard UI
-- Game over screen: shows top 5 local + top 20 global
-- Start screen: "Leaderboard" button opens dedicated screen with local/global tabs
-- Current player score highlighted with gold border
+## Customization System
+
+### Ship Designs
+| ID       | Name       | Default Color |
+|----------|------------|---------------|
+| triangle | Triángulo  | #22d3ee       |
+| diamond  | Diamante   | #e879f9       |
+| wing     | Ala        | #a3e635       |
+| hexagon  | Hexágono   | #38bdf8       |
+
+### Bullet Styles
+| ID        | Name    |
+|-----------|---------|
+| glow      | Brillo  |
+| elongated | Alargado |
+| dual      | Doble   |
+
+### localStorage Keys
+- `blasto_playerDesign`, `blasto_playerColor`, `blasto_bulletStyle`
+- `blasto_playerName`, `blasto_leaderboard`
 
 ## Deployment
 
 ### Frontend (blasto.pro)
-- Hosted on Dokploy (VPS)
-- Dockerfile uses nginx:alpine to serve static files
-- Build: esbuild minifies JS on each deploy
-- URL: https://blasto.pro
-
-### API (api.blasto.pro)
-- Separate repo: https://github.com/stkabir/api-blasto
-- Hosted on Dokploy (VPS)
-- Express.js server connecting to MySQL
-- Endpoints: /api/get-leaderboard, /api/submit-score
-
-## Common Issues
-
-### Asteroids Fall Too Fast/Slow
-- Check `fallSpeed` in `ASTEROID_TYPES`
-- Check `update()` for gravity/velocity normalization logic
-
-### Power-up Not Showing
-- Check `updatePowerUpIndicator()` and `updatePowerUpIconStyles()` in game.js
-- Verify `activePowerUps` object structure in powerup.js
-
-### Power-up Times Not Resetting
-- Fix in `powerup.js` `activate()`: use `remaining = duration` not `+=`
-
-### NaN on Rocket Impact
-- Ensure rocket has `damage` property set to target's HP before impact
+- Docker: nginx:alpine serving index.html + dist/ + css/
+- Build: `pnpm build`
 
 ## Commands
 ```bash
-pnpm install     # Install dependencies (ALWAYS use pnpm, not npm)
-pnpm run build   # Minify JS for production
-pnpm run watch   # Watch mode for development
+pnpm install       # Install dependencies (ALWAYS use pnpm)
+pnpm run dev       # Dev server with hot reload
+pnpm run build     # Production build
+pnpm run watch     # Watch mode
+pnpm run cap-sync  # Build + sync to Capacitor Android
+pnpm exec tsc --noEmit  # Type check
 ```
 
 **IMPORTANT:** This project uses pnpm.
 
 ## Git Ignore Notes
 - `node_modules/` is gitignored
-- `index.dev.html` is gitignored (local dev only)
-- `*.min.js` is NOT gitignored (needed for Docker build)
+- `index.dev.html` is gitignored
+- `dist/`, `www/` are gitignored (generated)
+- `android/` is NOT gitignored (Capacitor project)

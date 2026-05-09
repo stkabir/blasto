@@ -1,3 +1,5 @@
 node_modules/
 index.dev.html
 package-lock.json
+dist/
+www/
