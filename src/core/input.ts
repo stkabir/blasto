@@ -1,4 +1,5 @@
 import type { GameInput, GameState } from '../core/types.js';
+import { soundManager } from '../systems/audio.js';
 
 export function setupInput(handlers: {
   onTogglePause: () => void;
@@ -20,6 +21,7 @@ export function setupInput(handlers: {
   const gameOverScreen = document.getElementById('game-over-screen') as HTMLElement;
   const pauseScreen = document.getElementById('pause-screen') as HTMLElement;
   const pauseBackBtn = document.getElementById('pause-back-btn') as HTMLElement;
+  const soundToggleBtn = document.getElementById('sound-toggle-btn') as HTMLElement;
   const startBtn = document.getElementById('start-btn') as HTMLElement;
   const changeNameBtn = document.getElementById('change-name-btn') as HTMLElement;
   const nameModal = document.getElementById('name-modal') as HTMLElement;
@@ -184,6 +186,29 @@ export function setupInput(handlers: {
 
   pauseBackBtn.addEventListener('click', (e) => { e.stopPropagation(); handlers.onBackToMenu(); });
   pauseBackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlers.onBackToMenu(); }, { passive: false });
+
+  function updateSoundButton(): void {
+    const enabled = localStorage.getItem('blasto_soundEnabled') !== 'false';
+    soundToggleBtn.textContent = enabled ? '🔊 Sonido' : '🔇 Silenciado';
+    soundManager.setEnabled(enabled);
+  }
+
+  updateSoundButton();
+
+  soundToggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const enabled = localStorage.getItem('blasto_soundEnabled') !== 'false';
+    localStorage.setItem('blasto_soundEnabled', String(!enabled));
+    updateSoundButton();
+  });
+
+  soundToggleBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const enabled = localStorage.getItem('blasto_soundEnabled') !== 'false';
+    localStorage.setItem('blasto_soundEnabled', String(!enabled));
+    updateSoundButton();
+  }, { passive: false });
 
   howToPlayBtn.addEventListener('click', (e) => { e.stopPropagation(); handlers.onShowInstructions(); });
   howToPlayBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlers.onShowInstructions(); }, { passive: false });

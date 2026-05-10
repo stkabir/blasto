@@ -717,8 +717,8 @@ body {
     text-shadow: 0 0 30px var(--flame);
 }
 
-#pause-screen .screen-back-btn {
-    margin-top: 24px;
+#pause-screen .screen-back-btn + .screen-back-btn {
+    margin-top: 8px;
 }
 
 #final-score {
