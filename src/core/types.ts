@@ -93,6 +93,15 @@ export interface TrailParticle {
   color: string;
 }
 
+export interface SpeedLine {
+  x: number;
+  y: number;
+  vx: number;
+  alpha: number;
+  length: number;
+  fromRight: boolean;
+}
+
 export interface FloatingText {
   x: number;
   y: number;

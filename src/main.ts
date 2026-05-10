@@ -22,6 +22,8 @@ import {
   announce,
   triggerShake,
   triggerFlash,
+  updateSpeedLines,
+  drawSpeedLines,
 } from './systems/effects.js';
 import { checkAllCollisions, updateRockets, type ComboState } from './systems/collision.js';
 import { saveLocalScore, submitGlobalScore, renderLocalLeaderboard, renderGlobalLeaderboard } from './ui/leaderboard.js';
@@ -289,7 +291,7 @@ class Game {
 
     this.asteroidManager = new AsteroidManager();
     this.asteroidManager.onPhaseStart = (wave: number) => {
-      this.targetStarSpeedMult = 1.0;
+      this.targetStarSpeedMult = 1.0 + this.currentTier * 0.4;
       const tier = Math.min(4, Math.floor((wave - 1) / 5));
       if (tier > this.currentTier && wave > 1) {
         this.currentTier = tier;
@@ -321,7 +323,7 @@ class Game {
       }
 
       if (completedPhase === 3) {
-        this.targetStarSpeedMult = 2.5;
+        this.targetStarSpeedMult = 4.0;
       }
 
       announce(this.effects.announcements, this.canvas.height, this.canvas.width, txt, {
@@ -331,7 +333,7 @@ class Game {
       });
     };
     this.asteroidManager.onWaveComplete = () => {
-      this.targetStarSpeedMult = 2.5;
+      this.targetStarSpeedMult = 4.0;
     };
     this.asteroidManager.onBossWave = (wave: number) => {
       if (this.bossManager) {
@@ -415,7 +417,7 @@ class Game {
       this.asteroidManager!.startWaveSystem();
     };
     this.asteroidManager.onPhaseStart = (wave: number) => {
-      this.targetStarSpeedMult = 1.0;
+      this.targetStarSpeedMult = 1.0 + this.currentTier * 0.4;
       const tier = Math.min(4, Math.floor((wave - 1) / 5));
       if (tier > this.currentTier && wave > 1) {
         this.currentTier = tier;
@@ -447,7 +449,7 @@ class Game {
       }
 
       if (completedPhase === 3) {
-        this.targetStarSpeedMult = 2.5;
+        this.targetStarSpeedMult = 4.0;
       }
 
       announce(this.effects.announcements, this.canvas.height, this.canvas.width, txt, {
@@ -457,7 +459,7 @@ class Game {
       });
     };
     this.asteroidManager.onWaveComplete = () => {
-      this.targetStarSpeedMult = 2.5;
+      this.targetStarSpeedMult = 4.0;
     };
     this.asteroidManager.onBossWave = (wave: number) => {
       if (this.bossManager) {
@@ -500,8 +502,9 @@ class Game {
   }
 
   update(dt: number): void {
-    this.starSpeedMult += (this.targetStarSpeedMult - this.starSpeedMult) * dt * 3.0;
+    this.starSpeedMult += (this.targetStarSpeedMult - this.starSpeedMult) * dt * 1.5;
     updateStarfield(this.starfield, dt, this.state === 'playing', this.starSpeedMult);
+    updateSpeedLines(this.effects, dt, this.starSpeedMult, this.canvas.width, this.canvas.height);
     updateShake(this.effects, dt);
     updateFlash(this.effects, dt);
     updateTrail(this.effects, dt);
@@ -660,6 +663,7 @@ class Game {
     this.ctx.fillRect(-10, -10, this.canvas.width + 20, this.canvas.height + 20);
 
     drawStarfield(this.ctx, this.starfield);
+    drawSpeedLines(this.ctx, this.effects);
     drawTrail(this.ctx, this.effects);
 
     if (this.state === 'playing') {

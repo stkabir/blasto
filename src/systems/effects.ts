@@ -1,4 +1,4 @@
-import type { TrailParticle, Explosion, FloatingText, Announcement } from '../core/types.js';
+import type { TrailParticle, Explosion, FloatingText, Announcement, SpeedLine } from '../core/types.js';
 import type { Player } from '../entities/player.js';
 
 export interface EffectsState {
@@ -10,6 +10,8 @@ export interface EffectsState {
   shakeIntensity: number;
   shakeTimer: number;
   flashAlpha: number;
+  speedLines: SpeedLine[];
+  speedLineTimer: number;
 }
 
 export function createEffectsState(): EffectsState {
@@ -22,6 +24,8 @@ export function createEffectsState(): EffectsState {
     shakeIntensity: 0,
     shakeTimer: 0,
     flashAlpha: 0,
+    speedLines: [],
+    speedLineTimer: 0,
   };
 }
 
@@ -243,5 +247,58 @@ export function updateFlash(effects: EffectsState, dt: number): void {
   if (effects.flashAlpha > 0) {
     effects.flashAlpha -= dt * 2.5;
     if (effects.flashAlpha < 0) effects.flashAlpha = 0;
+  }
+}
+
+export function updateSpeedLines(effects: EffectsState, dt: number, speedMult: number, canvasWidth: number, canvasHeight: number): void {
+  if (speedMult <= 1.3) {
+    effects.speedLines = [];
+    effects.speedLineTimer = 0;
+    return;
+  }
+
+  effects.speedLineTimer += dt;
+  const intensity = speedMult - 1.0;
+  const spawnInterval = 0.03 / intensity;
+  const maxLines = Math.floor(intensity * 25);
+
+  while (effects.speedLineTimer >= spawnInterval && effects.speedLines.length < maxLines) {
+    effects.speedLineTimer -= spawnInterval;
+    const fromRight = Math.random() < 0.5;
+    const speed = 500 + Math.random() * 800;
+    effects.speedLines.push({
+      x: fromRight ? canvasWidth + 20 : -20,
+      y: Math.random() * canvasHeight,
+      vx: (fromRight ? -1 : 1) * speed,
+      alpha: 0.25 + Math.random() * 0.45,
+      length: 40 + Math.random() * 120,
+      fromRight,
+    });
+  }
+
+  for (let i = effects.speedLines.length - 1; i >= 0; i--) {
+    const sl = effects.speedLines[i];
+    sl.x += sl.vx * dt;
+    sl.alpha -= dt * 1.8;
+    if (sl.alpha <= 0 || sl.x < -150 || sl.x > canvasWidth + 150) {
+      effects.speedLines.splice(i, 1);
+    }
+  }
+}
+
+export function drawSpeedLines(ctx: CanvasRenderingContext2D, effects: EffectsState): void {
+  for (const sl of effects.speedLines) {
+    ctx.save();
+    ctx.globalAlpha = sl.alpha;
+    ctx.strokeStyle = '#7dd3fc';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = '#38bdf8';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    const endX = sl.x + (sl.fromRight ? -sl.length : sl.length);
+    ctx.moveTo(sl.x, sl.y);
+    ctx.lineTo(endX, sl.y);
+    ctx.stroke();
+    ctx.restore();
   }
 }
