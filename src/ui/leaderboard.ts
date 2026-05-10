@@ -66,13 +66,20 @@ function renderLeaderboardRows(
     if (i === 0) row.classList.add('rank-1');
     else if (i === 1) row.classList.add('rank-2');
     else if (i === 2) row.classList.add('rank-3');
+    else if (i <= 4) row.classList.add('rank-top5');
+    else if (i <= 9) row.classList.add('rank-top10');
+    else if (i <= 19) row.classList.add('rank-top20');
+    else if (i <= 49) row.classList.add('rank-top50');
+    else if (i <= 99) row.classList.add('rank-top100');
     let shipHtml = '';
     if (showShip && entry.designId) {
       const color = entry.color || '#22d3ee';
       shipHtml = `<span class="lb-ship">${getDesignSVG(entry.designId, color)}</span>`;
     }
+    const medals = ['🥇', '🥈', '🥉'];
+    const rankDisplay = i < 3 ? medals[i] : String(i + 1);
     row.innerHTML = `
-      <span class="lb-rank">${i + 1}</span>
+      <span class="lb-rank">${rankDisplay}</span>
       ${shipHtml}
       <span class="lb-name">${escapeHtml(entry.name)}</span>
       <span class="lb-score">${formatScore(entry.score)}</span>

@@ -99,11 +99,10 @@ export class PowerUpManager {
           this.spawn(POWERUP_TYPES.LIFE);
           return;
         }
+      }
+
+      if (Math.random() < POWERUP_REGULAR_CHANCE) {
         this.spawnRandom();
-      } else {
-        if (Math.random() < POWERUP_REGULAR_CHANCE) {
-          this.spawnRandom();
-        }
       }
     }
   }

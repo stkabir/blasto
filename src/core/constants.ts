@@ -47,10 +47,10 @@ export const POWERUP_TYPES: Record<string, PowerUpType> = {
   LIFE:   { id: 'life',   name: 'Life',   duration: 0, color: '#ef4444', icon: '❤' },
 };
 
-export const POWERUP_SPAWN_SCORE = 70;
+export const POWERUP_SPAWN_SCORE = 100;
 export const POWERUP_LIFE_SCORE = 150;
-export const POWERUP_LIFE_CHANCE = 0.12;
-export const POWERUP_REGULAR_CHANCE = 0.25;
+export const POWERUP_LIFE_CHANCE = 0.08;
+export const POWERUP_REGULAR_CHANCE = 0.15;
 export const POWERUP_HP = 7;
 export const LIFE_INVULNERABILITY_DURATION = 4000;
 

@@ -1,5 +1,6 @@
 import { PLAYER_CONFIG, LIFE_INVULNERABILITY_DURATION } from '../core/constants.js';
 import type { Player } from '../entities/player.js';
+import { soundManager } from './audio.js';
 import type { Asteroid } from '../entities/asteroid.js';
 import type { AsteroidManager } from '../entities/asteroid.js';
 import type { BossManager } from '../entities/boss.js';
@@ -37,30 +38,35 @@ export function checkAllCollisions(
   }
 
   const asteroidHit = asteroidManager.checkBulletCollision(player.bullets);
-  if (asteroidHit) {
-    const { asteroid, index } = asteroidHit;
-    const destroyed = asteroid.hit(PLAYER_CONFIG.bulletDamage);
-    scoreIncrement += PLAYER_CONFIG.bulletDamage;
+    if (asteroidHit) {
+      const { asteroid, index } = asteroidHit;
+      const destroyed = asteroid.hit(PLAYER_CONFIG.bulletDamage);
+      scoreIncrement += PLAYER_CONFIG.bulletDamage;
+      soundManager.play('hit');
 
-    combo.lastHitTime = now;
+      combo.lastHitTime = now;
     combo.count++;
 
     if (combo.count === 5) {
+      soundManager.play('combo');
       announce(effects.announcements, canvas.height, canvas.width, '¡COMBO!', { color: '#f59e0b', fontSize: 56 });
       triggerShake(effects, 6, 150);
     } else if (combo.count === 10) {
+      soundManager.play('combo');
       announce(effects.announcements, canvas.height, canvas.width, '¡EN FUEGO!', { color: '#ef4444', fontSize: 64 });
       triggerShake(effects, 8, 200);
     } else if (combo.count === 20) {
+      soundManager.play('combo');
       announce(effects.announcements, canvas.height, canvas.width, '¡INCREÍBLE!', { color: '#a855f7', fontSize: 72 });
       triggerShake(effects, 10, 250);
     }
 
     addFloatingText(effects.floatingTexts, asteroid.x, asteroid.y - asteroid.radius, `+${PLAYER_CONFIG.bulletDamage}`);
 
-    if (destroyed) {
-      scoreIncrement += asteroid.type.hp;
-      const shakeIntensity = asteroid.type.level <= 2 ? 4 : asteroid.type.level <= 3 ? 6 : 10;
+      if (destroyed) {
+        scoreIncrement += asteroid.type.hp;
+        soundManager.play('explode');
+        const shakeIntensity = asteroid.type.level <= 2 ? 4 : asteroid.type.level <= 3 ? 6 : 10;
       triggerShake(effects, shakeIntensity, 100);
       effects.explosions.push(createExplosion(asteroid.x, asteroid.y, asteroid.type.color));
       const children = asteroid.split();
@@ -72,19 +78,21 @@ export function checkAllCollisions(
   }
 
   const bossHit = bossManager.checkBulletCollision(player.bullets);
-  if (bossHit && bossManager.boss) {
-    const destroyed = bossManager.boss.hit(PLAYER_CONFIG.bulletDamage);
-    scoreIncrement += PLAYER_CONFIG.bulletDamage;
-    triggerFlash(effects, 0.2);
+    if (bossHit && bossManager.boss) {
+      const destroyed = bossManager.boss.hit(PLAYER_CONFIG.bulletDamage);
+      scoreIncrement += PLAYER_CONFIG.bulletDamage;
+      soundManager.play('hit');
+      triggerFlash(effects, 0.2);
     addFloatingText(
       effects.floatingTexts,
       bossManager.boss.x + bossManager.boss.width / 2,
       bossManager.boss.y,
       `+${PLAYER_CONFIG.bulletDamage}`
     );
-    if (destroyed) {
-      scoreIncrement += 500;
-      triggerShake(effects, 12, 200);
+      if (destroyed) {
+        scoreIncrement += 500;
+        soundManager.play('explode');
+        triggerShake(effects, 12, 200);
       effects.explosions.push(createExplosion(
         bossManager.boss.x + bossManager.boss.width / 2,
         bossManager.boss.y + bossManager.boss.height / 2,
@@ -99,9 +107,10 @@ export function checkAllCollisions(
     if (powerupType.id === 'rocket') {
       const rocket = player.fireRocket(asteroidManager);
       if (rocket) rockets.push(rocket);
-    } else {
-      powerUpManager.activate(powerupType);
-    }
+      } else {
+        powerUpManager.activate(powerupType);
+        soundManager.play('powerup');
+      }
   }
 
   for (let i = rockets.length - 1; i >= 0; i--) {
@@ -138,6 +147,7 @@ export function checkAllCollisions(
       if (powerUpManager.hasActive('life')) {
         delete powerUpManager.activePowerUps.life;
         player.invulnerableUntil = Date.now() + LIFE_INVULNERABILITY_DURATION;
+        soundManager.play('life');
         return scoreIncrement;
       }
       return -1;
@@ -150,6 +160,7 @@ export function checkAllCollisions(
     if (powerUpManager.hasActive('life')) {
       delete powerUpManager.activePowerUps.life;
       player.invulnerableUntil = Date.now() + LIFE_INVULNERABILITY_DURATION;
+      soundManager.play('life');
       return scoreIncrement;
     }
     return -1;
@@ -162,6 +173,7 @@ export function checkAllCollisions(
       if (rocket) rockets.push(rocket);
     } else {
       powerUpManager.activate(powerup);
+      soundManager.play('powerup');
     }
   }
 

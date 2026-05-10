@@ -19,6 +19,7 @@ export function setupInput(handlers: {
   const startScreen = document.getElementById('start-screen') as HTMLElement;
   const gameOverScreen = document.getElementById('game-over-screen') as HTMLElement;
   const pauseScreen = document.getElementById('pause-screen') as HTMLElement;
+  const pauseBackBtn = document.getElementById('pause-back-btn') as HTMLElement;
   const startBtn = document.getElementById('start-btn') as HTMLElement;
   const changeNameBtn = document.getElementById('change-name-btn') as HTMLElement;
   const nameModal = document.getElementById('name-modal') as HTMLElement;
@@ -180,6 +181,9 @@ export function setupInput(handlers: {
     e.preventDefault();
     if (handlers.getState() === 'paused') handlers.onTogglePause();
   }, { passive: false });
+
+  pauseBackBtn.addEventListener('click', (e) => { e.stopPropagation(); handlers.onBackToMenu(); });
+  pauseBackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlers.onBackToMenu(); }, { passive: false });
 
   howToPlayBtn.addEventListener('click', (e) => { e.stopPropagation(); handlers.onShowInstructions(); });
   howToPlayBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlers.onShowInstructions(); }, { passive: false });

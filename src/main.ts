@@ -4,6 +4,7 @@ import { Player } from './entities/player.js';
 import { AsteroidManager } from './entities/asteroid.js';
 import { BossManager } from './entities/boss.js';
 import { PowerUpManager } from './entities/powerup.js';
+import { soundManager } from './systems/audio.js';
 import { createStarfield, updateStarfield, drawStarfield } from './background.js';
 import {
   createEffectsState,
@@ -74,6 +75,8 @@ class Game {
 
   customization: CustomizationState;
   bossActive: boolean = false;
+
+  lastShootSound = 0;
 
   constructor() {
     this.canvas = document.getElementById('game') as HTMLCanvasElement;
@@ -205,6 +208,9 @@ class Game {
 
   backToMenu(): void {
     this.gameOverScreen.classList.add('hidden');
+    this.pauseScreen.classList.add('hidden');
+    this.playerInfo.classList.remove('paused');
+    this.hud.classList.add('hidden');
     this.startScreen.classList.remove('hidden');
     this.state = 'start';
   }
@@ -299,6 +305,12 @@ class Game {
     const hasTriple = this.powerUpManager.hasActive('triple');
 
     this.player.update(dt, this.keys, frozen, hasTriple);
+
+    if (Date.now() - this.player.lastFireTime < 20) {
+      this.lastShootSound = Date.now();
+      soundManager.play('shoot');
+    }
+
     this.asteroidManager.update(dt, frozen);
     this.bossManager.update(dt, this.player);
     this.powerUpManager.update(dt, frozen);
@@ -341,6 +353,7 @@ class Game {
 
   async gameOver(): Promise<void> {
     this.state = 'gameover';
+    soundManager.play('gameover');
     triggerFlash(this.effects, 0.6);
     triggerShake(this.effects, 12, 300);
 
