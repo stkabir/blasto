@@ -3,3 +3,4 @@ index.dev.html
 package-lock.json
 dist/
 www/
+.claude/

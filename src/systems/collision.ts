@@ -9,6 +9,7 @@ import type { Rocket } from '../core/types.js';
 import {
   addFloatingText,
   createExplosion,
+  addShockwave,
   triggerShake,
   triggerFlash,
   announce,
@@ -68,7 +69,10 @@ export function checkAllCollisions(
         soundManager.play('explode');
         const shakeIntensity = asteroid.type.level <= 2 ? 4 : asteroid.type.level <= 3 ? 6 : 10;
       triggerShake(effects, shakeIntensity, 100);
-      effects.explosions.push(createExplosion(asteroid.x, asteroid.y, asteroid.type.color));
+      const scale = 0.7 + asteroid.type.level * 0.25;
+      effects.explosions.push(createExplosion(asteroid.x, asteroid.y, asteroid.type.color, scale));
+      addShockwave(effects, asteroid.x, asteroid.y, asteroid.type.color, asteroid.radius * 3.5);
+      if (asteroid.type.level >= 4) triggerFlash(effects, 0.18);
       const children = asteroid.split();
       asteroidManager.remove(index);
       for (const child of children) {
@@ -93,11 +97,12 @@ export function checkAllCollisions(
         scoreIncrement += 500;
         soundManager.play('explode');
         triggerShake(effects, 12, 200);
-      effects.explosions.push(createExplosion(
-        bossManager.boss.x + bossManager.boss.width / 2,
-        bossManager.boss.y + bossManager.boss.height / 2,
-        '#ef4444'
-      ));
+      const bx = bossManager.boss.x + bossManager.boss.width / 2;
+      const by = bossManager.boss.y + bossManager.boss.height / 2;
+      effects.explosions.push(createExplosion(bx, by, '#ef4444', 2.5));
+      addShockwave(effects, bx, by, '#ef4444', 240);
+      addShockwave(effects, bx, by, '#fbbf24', 180);
+      triggerFlash(effects, 0.5);
       bossManager.boss = null;
     }
   }
@@ -126,7 +131,9 @@ export function checkAllCollisions(
       t.hp -= r.damage;
       scoreIncrement += r.damage;
       if (t.hp <= 0) {
-        effects.explosions.push(createExplosion(t.x, t.y, t.type.color));
+        const scale = 0.7 + t.type.level * 0.25;
+        effects.explosions.push(createExplosion(t.x, t.y, t.type.color, scale));
+        addShockwave(effects, t.x, t.y, t.type.color, t.radius * 3.5);
         const children = t.split();
         const idx = asteroidManager.asteroids.indexOf(t);
         if (idx > -1) asteroidManager.remove(idx);

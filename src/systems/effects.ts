@@ -1,10 +1,11 @@
-import type { TrailParticle, Explosion, FloatingText, Announcement, SpeedLine } from '../core/types.js';
+import type { TrailParticle, Explosion, FloatingText, Announcement, SpeedLine, Shockwave } from '../core/types.js';
 import type { Player } from '../entities/player.js';
 
 export interface EffectsState {
   playerTrail: TrailParticle[];
   maxTrailParticles: number;
   explosions: Explosion[];
+  shockwaves: Shockwave[];
   floatingTexts: FloatingText[];
   announcements: Announcement[];
   shakeIntensity: number;
@@ -17,8 +18,9 @@ export interface EffectsState {
 export function createEffectsState(): EffectsState {
   return {
     playerTrail: [],
-    maxTrailParticles: 30,
+    maxTrailParticles: 50,
     explosions: [],
+    shockwaves: [],
     floatingTexts: [],
     announcements: [],
     shakeIntensity: 0,
@@ -30,18 +32,21 @@ export function createEffectsState(): EffectsState {
 }
 
 export function addTrailParticle(effects: EffectsState, player: Player): void {
-  if (effects.playerTrail.length >= effects.maxTrailParticles) {
-    effects.playerTrail.shift();
+  for (let i = 0; i < 3; i++) {
+    if (effects.playerTrail.length >= effects.maxTrailParticles) {
+      effects.playerTrail.shift();
+    }
+    const isCore = i === 0;
+    effects.playerTrail.push({
+      x: player.x + (Math.random() - 0.5) * (isCore ? 4 : 12),
+      y: player.y + player.radius * 0.6 + (Math.random() - 0.5) * 2,
+      vx: (Math.random() - 0.5) * (isCore ? 12 : 40),
+      vy: 60 + Math.random() * 60,
+      alpha: isCore ? 1 : 0.6,
+      size: isCore ? 3 + Math.random() * 2 : 1.5 + Math.random() * 2,
+      color: isCore ? '#ffffff' : player.color,
+    });
   }
-  effects.playerTrail.push({
-    x: player.x + (Math.random() - 0.5) * 10,
-    y: player.y + player.radius * 0.5,
-    vx: (Math.random() - 0.5) * 20,
-    vy: 20 + Math.random() * 30,
-    alpha: 0.8,
-    size: 2 + Math.random() * 2,
-    color: player.color,
-  });
 }
 
 export function updateTrail(effects: EffectsState, dt: number): void {
@@ -49,7 +54,8 @@ export function updateTrail(effects: EffectsState, dt: number): void {
     const p = effects.playerTrail[i];
     p.x += p.vx * dt;
     p.y += p.vy * dt;
-    p.alpha -= dt * 2.5;
+    p.alpha -= dt * 3.5;
+    p.size *= 0.97;
     if (p.alpha <= 0) {
       effects.playerTrail.splice(i, 1);
     }
@@ -57,30 +63,101 @@ export function updateTrail(effects: EffectsState, dt: number): void {
 }
 
 export function drawTrail(ctx: CanvasRenderingContext2D, effects: EffectsState): void {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
   for (const p of effects.playerTrail) {
     ctx.globalAlpha = p.alpha;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = p.size * 3;
     ctx.fillStyle = p.color;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
     ctx.fill();
   }
+  ctx.restore();
   ctx.globalAlpha = 1;
 }
 
-export function createExplosion(x: number, y: number, color: string): Explosion {
+export function createExplosion(x: number, y: number, color: string, scale: number = 1): Explosion {
   const particles = [];
-  for (let i = 0; i < 12; i++) {
-    const angle = (i / 12) * Math.PI * 2;
+  const dotCount = Math.floor(14 * scale);
+  for (let i = 0; i < dotCount; i++) {
+    const angle = (i / dotCount) * Math.PI * 2 + Math.random() * 0.4;
+    const speed = (80 + Math.random() * 120) * scale;
     particles.push({
       x, y,
-      vx: Math.cos(angle) * (80 + Math.random() * 70),
-      vy: Math.sin(angle) * (100 + Math.random() * 80),
-      radius: Math.random() * 8 + 4,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      radius: (2 + Math.random() * 4) * scale,
+      life: 1,
+      color: '#ffffff',
+      shape: 'dot' as const,
+      decay: 2.5,
+    });
+  }
+  const chunkCount = Math.floor(8 * scale);
+  for (let i = 0; i < chunkCount; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = (50 + Math.random() * 90) * scale;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 30,
+      radius: (3 + Math.random() * 5) * scale,
       life: 1,
       color,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 8,
+      shape: 'chunk' as const,
+      decay: 1.4,
+    });
+  }
+  const sparkCount = Math.floor(10 * scale);
+  for (let i = 0; i < sparkCount; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = (180 + Math.random() * 200) * scale;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      radius: 1.5 + Math.random() * 1.5,
+      life: 1,
+      color,
+      shape: 'spark' as const,
+      decay: 3,
     });
   }
   return { particles };
+}
+
+export function addShockwave(effects: EffectsState, x: number, y: number, color: string, maxRadius: number = 80): void {
+  effects.shockwaves.push({ x, y, radius: 4, maxRadius, alpha: 0.9, color });
+}
+
+export function updateShockwaves(effects: EffectsState, dt: number): void {
+  for (let i = effects.shockwaves.length - 1; i >= 0; i--) {
+    const s = effects.shockwaves[i];
+    s.radius += (s.maxRadius - s.radius) * dt * 6;
+    s.alpha -= dt * 2.2;
+    if (s.alpha <= 0) effects.shockwaves.splice(i, 1);
+  }
+}
+
+export function drawShockwaves(ctx: CanvasRenderingContext2D, effects: EffectsState): void {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const s of effects.shockwaves) {
+    ctx.globalAlpha = s.alpha;
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = s.color;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
 }
 
 export function updateExplosions(explosions: Explosion[], dt: number): void {
@@ -90,8 +167,13 @@ export function updateExplosions(explosions: Explosion[], dt: number): void {
     for (const p of exp.particles) {
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      p.vy += 100 * dt;
-      p.life -= dt * 2;
+      p.vx *= 0.96;
+      p.vy *= 0.96;
+      p.vy += 80 * dt;
+      if (p.rotation !== undefined && p.rotSpeed !== undefined) {
+        p.rotation += p.rotSpeed * dt;
+      }
+      p.life -= dt * (p.decay ?? 2);
       if (p.life > 0) allDead = false;
     }
     if (allDead) explosions.splice(i, 1);
@@ -99,15 +181,43 @@ export function updateExplosions(explosions: Explosion[], dt: number): void {
 }
 
 export function drawExplosions(ctx: CanvasRenderingContext2D, explosions: Explosion[]): void {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
   for (const exp of explosions) {
     for (const p of exp.particles) {
-      ctx.globalAlpha = p.life;
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.radius * p.life, 0, Math.PI * 2);
-      ctx.fill();
+      if (p.life <= 0) continue;
+      ctx.globalAlpha = Math.min(1, p.life);
+      if (p.shape === 'chunk' && p.rotation !== undefined) {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 6;
+        const r = p.radius * Math.max(0.3, p.life);
+        ctx.fillRect(-r, -r * 0.6, r * 2, r * 1.2);
+        ctx.restore();
+      } else if (p.shape === 'spark') {
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = p.radius;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x - p.vx * 0.04, p.y - p.vy * 0.04);
+        ctx.stroke();
+      } else {
+        ctx.shadowColor = p.color === '#ffffff' ? '#fde68a' : p.color;
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius * Math.max(0.2, p.life), 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
+  ctx.restore();
   ctx.globalAlpha = 1;
 }
 

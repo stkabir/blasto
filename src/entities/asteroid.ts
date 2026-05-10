@@ -1,6 +1,24 @@
 import { ASTEROID_TYPES, SPLIT_MAP } from '../core/constants.js';
 import type { AsteroidType, AsteroidTypeKey, AsteroidVertex, PlayerBullet } from '../core/types.js';
 
+function mix(a: string, b: string, t: number): string {
+  const pa = parseHex(a);
+  const pb = parseHex(b);
+  const r = Math.round(pa[0] + (pb[0] - pa[0]) * t);
+  const g = Math.round(pa[1] + (pb[1] - pa[1]) * t);
+  const bl = Math.round(pa[2] + (pb[2] - pa[2]) * t);
+  return `rgb(${r},${g},${bl})`;
+}
+
+function parseHex(hex: string): [number, number, number] {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return [128, 128, 128];
+  return [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)];
+}
+
+interface Crater { x: number; y: number; r: number; lightAngle: number; }
+interface Vein { points: AsteroidVertex[]; }
+
 export class Asteroid {
   x: number;
   y: number;
@@ -13,6 +31,10 @@ export class Asteroid {
   rotation: number;
   rotationSpeed: number;
   vertices: AsteroidVertex[];
+  innerVertices: AsteroidVertex[];
+  craters: Crater[];
+  veins: Vein[];
+  maxHp: number;
 
   constructor(x: number, y: number, type: AsteroidTypeKey, vx: number | null = null, vy: number | null = null) {
     this.x = x;
@@ -34,22 +56,64 @@ export class Asteroid {
     this.createdAt = Date.now();
     this.rotation = 0;
     this.rotationSpeed = (Math.random() - 0.5) * 2;
-    this.vertices = this.generateVertices();
+    this.vertices = this.generateVertices(18, 0.10);
+    this.innerVertices = this.generateVertices(14, 0.08, 0.6);
+    this.craters = this.generateCraters();
+    this.veins = this.generateVeins();
+    this.maxHp = this.hp;
   }
 
-  private generateVertices(): AsteroidVertex[] {
-    const points = 10;
+  private generateVertices(points: number, jag: number, scale: number = 1): AsteroidVertex[] {
     const vertices: AsteroidVertex[] = [];
     for (let i = 0; i < points; i++) {
       const angle = (i / points) * Math.PI * 2;
-      const jag = 0.15;
-      const r = this.radius * (1 - jag + Math.random() * jag * 2);
+      const r = this.radius * scale * (1 - jag + Math.random() * jag * 2);
       vertices.push({
         x: Math.cos(angle) * r,
         y: Math.sin(angle) * r,
       });
     }
     return vertices;
+  }
+
+  private generateCraters(): Crater[] {
+    const n = 2 + Math.floor(Math.random() * 3);
+    const list: Crater[] = [];
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const d = Math.random() * this.radius * 0.5;
+      list.push({
+        x: Math.cos(a) * d,
+        y: Math.sin(a) * d,
+        r: this.radius * (0.1 + Math.random() * 0.18),
+        lightAngle: -Math.PI * 0.75,
+      });
+    }
+    return list;
+  }
+
+  private generateVeins(): Vein[] {
+    const n = 2 + Math.floor(Math.random() * 3);
+    const veins: Vein[] = [];
+    for (let i = 0; i < n; i++) {
+      const baseAngle = Math.random() * Math.PI * 2;
+      const len = this.radius * (0.6 + Math.random() * 0.6);
+      const startD = -this.radius * 0.4 + Math.random() * this.radius * 0.4;
+      const points: AsteroidVertex[] = [];
+      const segs = 3 + Math.floor(Math.random() * 3);
+      for (let s = 0; s <= segs; s++) {
+        const t = s / segs;
+        const along = startD + t * len;
+        const wobble = (Math.random() - 0.5) * this.radius * 0.18;
+        const a = baseAngle + Math.PI / 2;
+        points.push({
+          x: Math.cos(baseAngle) * along + Math.cos(a) * wobble,
+          y: Math.sin(baseAngle) * along + Math.sin(a) * wobble,
+        });
+      }
+      veins.push({ points });
+    }
+    return veins;
   }
 
   update(dt: number, frozen: boolean): boolean {
@@ -71,6 +135,13 @@ export class Asteroid {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rotation);
 
+    const palette = {
+      base: this.type.color,
+      highlight: mix(this.type.color, '#ffffff', 0.35),
+      shadow: mix(this.type.color, '#000000', 0.55),
+    };
+    const r = this.radius;
+
     ctx.beginPath();
     for (let i = 0; i < this.vertices.length; i++) {
       if (i === 0) ctx.moveTo(this.vertices[i].x, this.vertices[i].y);
@@ -78,22 +149,124 @@ export class Asteroid {
     }
     ctx.closePath();
 
-    ctx.fillStyle = 'rgba(15, 24, 36, 0.5)';
+    ctx.fillStyle = palette.base;
     ctx.fill();
-    ctx.strokeStyle = this.type.color;
-    ctx.lineWidth = 2;
+
+    ctx.save();
+    ctx.clip();
+
+    ctx.fillStyle = palette.shadow;
+    ctx.globalAlpha = 0.45;
+    ctx.beginPath();
+    for (let i = 0; i < this.innerVertices.length; i++) {
+      const v = this.innerVertices[i];
+      const x = v.x + r * 0.35;
+      const y = v.y + r * 0.35;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = palette.highlight;
+    ctx.globalAlpha = 0.35;
+    ctx.beginPath();
+    for (let i = 0; i < this.innerVertices.length; i++) {
+      const v = this.innerVertices[i];
+      const x = v.x - r * 0.3;
+      const y = v.y - r * 0.3;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+    ctx.lineWidth = 1;
+    ctx.lineCap = 'round';
+    for (const v of this.veins) {
+      ctx.beginPath();
+      ctx.moveTo(v.points[0].x, v.points[0].y);
+      for (let i = 1; i < v.points.length; i++) {
+        ctx.lineTo(v.points[i].x, v.points[i].y);
+      }
+      ctx.stroke();
+    }
+
+    for (const c of this.craters) {
+      ctx.fillStyle = palette.shadow;
+      ctx.globalAlpha = 0.85;
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalAlpha = 0.6;
+      ctx.strokeStyle = palette.highlight;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r * 0.95, c.lightAngle - Math.PI * 0.45, c.lightAngle + Math.PI * 0.45);
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.5;
+      ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r * 0.95, c.lightAngle + Math.PI - Math.PI * 0.45, c.lightAngle + Math.PI + Math.PI * 0.45);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    const dmg = 1 - this.hp / this.maxHp;
+    if (dmg > 0.15) {
+      ctx.strokeStyle = `rgba(0,0,0,${0.4 + dmg * 0.5})`;
+      ctx.lineWidth = 1.4;
+      ctx.lineCap = 'round';
+      const cracks = Math.floor(dmg * 5);
+      for (let i = 0; i < cracks; i++) {
+        const a = (i / cracks) * Math.PI * 2 + (i * 0.37);
+        const midR = r * 0.3;
+        const endR = r * (0.85 + Math.random() * 0.1);
+        const midX = Math.cos(a) * midR + Math.cos(a + 1.2) * r * 0.12;
+        const midY = Math.sin(a) * midR + Math.sin(a + 1.2) * r * 0.12;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(midX, midY);
+        ctx.lineTo(Math.cos(a) * endR, Math.sin(a) * endR);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+
+    ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let i = 0; i < this.vertices.length; i++) {
+      if (i === 0) ctx.moveTo(this.vertices[i].x, this.vertices[i].y);
+      else ctx.lineTo(this.vertices[i].x, this.vertices[i].y);
+    }
+    ctx.closePath();
     ctx.stroke();
 
-    ctx.font = `bold ${this.radius * 0.7}px Arial`;
+    ctx.rotate(-this.rotation);
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.arc(0, 0, this.radius * 0.42, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.font = `bold ${this.radius * 0.65}px system-ui`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(0,0,0,0.8)';
-    ctx.fillText(String(this.hp), 1, 1);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(0,0,0,0.9)';
+    ctx.strokeText(String(this.hp), 0, 0);
     ctx.fillStyle = '#ffffff';
     ctx.fillText(String(this.hp), 0, 0);
 
     ctx.restore();
   }
+
 
   hit(damage: number): boolean {
     this.hp -= damage;

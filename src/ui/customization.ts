@@ -1,4 +1,5 @@
 import { PLAYER_DESIGNS, SHIP_COLORS, BULLET_STYLES } from '../core/constants.js';
+import { BACKGROUNDS } from '../background.js';
 import { getDesignSVG } from '../core/utils.js';
 
 function getBulletStyleSVG(id: string, colorOverride: string): string {
@@ -46,6 +47,16 @@ export interface CustomizationState {
   playerDesign: string;
   playerColor: string;
   bulletStyle: string;
+  background: string;
+}
+
+export function selectBackground(state: CustomizationState, id: string): void {
+  state.background = id;
+  localStorage.setItem('blasto_background', id);
+  const items = document.querySelectorAll('.customize-bg-item');
+  items.forEach(item => {
+    item.classList.toggle('selected', (item as HTMLElement).dataset.id === id);
+  });
 }
 
 export function selectDesign(state: CustomizationState, id: string): void {
@@ -100,6 +111,7 @@ export function createCustomizeList(
   onSelectDesign: (id: string) => void,
   onSelectColor: (color: string) => void,
   onSelectBulletStyle: (id: string) => void,
+  onSelectBackground?: (id: string) => void,
 ): void {
   const list = document.getElementById(containerId);
   if (!list) return;
@@ -112,6 +124,7 @@ export function createCustomizeList(
     { key: 'color', label: 'COLOR' },
     { key: 'design', label: 'NAVES' },
     { key: 'bullet', label: 'DISPAROS' },
+    { key: 'bg', label: 'FONDO' },
   ];
 
   const sectionMap = new Map<string, HTMLElement>();
@@ -216,4 +229,58 @@ export function createCustomizeList(
   bulletSection.appendChild(bulletsGrid);
   list.appendChild(bulletSection);
   sectionMap.set('bullet', bulletSection);
+
+  const bgSection = document.createElement('div');
+  bgSection.className = 'customize-section';
+  bgSection.dataset.section = 'bg';
+  const bgGrid = document.createElement('div');
+  bgGrid.className = 'customize-grid';
+  BACKGROUNDS.forEach(bg => {
+    const item = document.createElement('div');
+    item.className = 'customize-bg-item customize-design-item';
+    item.dataset.id = bg.id;
+
+    const preview = document.createElement('div');
+    preview.className = 'customize-bg-preview customize-design-preview';
+    preview.style.background = bg.base;
+    preview.style.borderRadius = '8px';
+    preview.style.position = 'relative';
+    preview.style.overflow = 'hidden';
+    preview.innerHTML = bgPreviewSVG(bg.id);
+    item.appendChild(preview);
+
+    const label = document.createElement('div');
+    label.style.fontSize = '11px';
+    label.style.textAlign = 'center';
+    label.style.marginTop = '4px';
+    label.style.opacity = '0.85';
+    label.textContent = bg.name;
+    item.appendChild(label);
+
+    if (bg.id === state.background) item.classList.add('selected');
+    item.addEventListener('click', () => onSelectBackground && onSelectBackground(bg.id));
+    bgGrid.appendChild(item);
+  });
+  bgSection.appendChild(bgGrid);
+  list.appendChild(bgSection);
+  sectionMap.set('bg', bgSection);
+}
+
+function bgPreviewSVG(id: string): string {
+  switch (id) {
+    case 'starfield':
+      return `<svg viewBox="0 0 60 60" style="width:100%;height:100%"><circle cx="10" cy="12" r="1" fill="white"/><circle cx="35" cy="20" r="1.5" fill="white"/><circle cx="50" cy="40" r="1" fill="white"/><circle cx="20" cy="48" r="1.2" fill="white"/><circle cx="42" cy="8" r="0.8" fill="white"/></svg>`;
+    case 'nebula':
+      return `<svg viewBox="0 0 60 60" style="width:100%;height:100%"><defs><radialGradient id="n1" cx="0.3" cy="0.4"><stop offset="0%" stop-color="#7c3aed" stop-opacity="0.7"/><stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/></radialGradient><radialGradient id="n2" cx="0.7" cy="0.7"><stop offset="0%" stop-color="#db2777" stop-opacity="0.7"/><stop offset="100%" stop-color="#db2777" stop-opacity="0"/></radialGradient></defs><rect width="60" height="60" fill="url(#n1)"/><rect width="60" height="60" fill="url(#n2)"/><circle cx="20" cy="20" r="0.8" fill="white"/><circle cx="45" cy="35" r="1" fill="white"/></svg>`;
+    case 'deep':
+      return `<svg viewBox="0 0 60 60" style="width:100%;height:100%"><defs><radialGradient id="p1" cx="0.3" cy="0.5"><stop offset="0%" stop-color="#fbbf24"/><stop offset="60%" stop-color="#7c2d12"/><stop offset="100%" stop-color="#000"/></radialGradient></defs><circle cx="20" cy="32" r="14" fill="url(#p1)"/><circle cx="45" cy="15" r="0.8" fill="white"/><circle cx="50" cy="48" r="1" fill="white"/></svg>`;
+    case 'grid':
+      return `<svg viewBox="0 0 60 60" style="width:100%;height:100%"><g stroke="#22d3ee" stroke-opacity="0.45" stroke-width="0.5" fill="none"><path d="M0 15H60M0 30H60M0 45H60M15 0V60M30 0V60M45 0V60"/></g><line x1="0" y1="40" x2="60" y2="40" stroke="#e879f9" stroke-width="1"/></svg>`;
+    case 'aurora':
+      return `<svg viewBox="0 0 60 60" style="width:100%;height:100%"><defs><linearGradient id="a1" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.6"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient><linearGradient id="a2" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#a78bfa" stop-opacity="0.5"/><stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/></linearGradient></defs><path d="M0 25 Q15 15 30 22 T60 20 L60 60 L0 60Z" fill="url(#a1)"/><path d="M0 35 Q15 28 30 32 T60 30 L60 60 L0 60Z" fill="url(#a2)"/></svg>`;
+    case 'crimson':
+      return `<svg viewBox="0 0 60 60" style="width:100%;height:100%"><defs><radialGradient id="c1" cx="0.5" cy="0.4"><stop offset="0%" stop-color="#dc2626" stop-opacity="0.6"/><stop offset="100%" stop-color="#160506" stop-opacity="0"/></radialGradient></defs><rect width="60" height="60" fill="url(#c1)"/><circle cx="15" cy="50" r="0.8" fill="#fecaca"/><circle cx="48" cy="20" r="1" fill="#fecaca"/></svg>`;
+    default:
+      return '';
+  }
 }

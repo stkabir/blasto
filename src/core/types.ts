@@ -77,10 +77,23 @@ export interface ExplosionParticle {
   radius: number;
   life: number;
   color: string;
+  rotation?: number;
+  rotSpeed?: number;
+  shape?: 'dot' | 'chunk' | 'spark';
+  decay?: number;
 }
 
 export interface Explosion {
   particles: ExplosionParticle[];
+}
+
+export interface Shockwave {
+  x: number;
+  y: number;
+  radius: number;
+  maxRadius: number;
+  alpha: number;
+  color: string;
 }
 
 export interface TrailParticle {

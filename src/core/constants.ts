@@ -62,13 +62,54 @@ export const SAVE_KEY = 'blasto_savedGame';
 
 export const SHIP_COLORS = ['#22d3ee', '#e879f9', '#a3e635', '#818cf8', '#facc15', '#fb923c', '#f43f5e', '#cbd5e1', '#10b981', '#8b5cf6'];
 
+function fillStrokeShip(ctx: CanvasRenderingContext2D, fill: string): void {
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.shadowColor = ctx.strokeStyle as string;
+  ctx.shadowBlur = 12;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+}
+
+function cockpit(ctx: CanvasRenderingContext2D, x: number, y: number, r: number): void {
+  const grad = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r);
+  grad.addColorStop(0, '#ffffff');
+  grad.addColorStop(0.5, ctx.strokeStyle as string);
+  grad.addColorStop(1, 'rgba(0,0,0,0.6)');
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+}
+
+function bodyFill(ctx: CanvasRenderingContext2D, r: number): string {
+  const grad = ctx.createLinearGradient(0, -r, 0, r);
+  grad.addColorStop(0, 'rgba(255,255,255,0.25)');
+  grad.addColorStop(0.5, 'rgba(15,24,36,0.85)');
+  grad.addColorStop(1, 'rgba(5,8,13,0.95)');
+  return grad as unknown as string;
+}
+
 function drawTriangle(ctx: CanvasRenderingContext2D, r: number): void {
   ctx.beginPath();
   ctx.moveTo(0, -r);
   ctx.lineTo(-r * 0.8, r * 0.6);
+  ctx.lineTo(-r * 0.45, r * 0.4);
+  ctx.lineTo(0, r * 0.55);
+  ctx.lineTo(r * 0.45, r * 0.4);
   ctx.lineTo(r * 0.8, r * 0.6);
   ctx.closePath();
-  ctx.stroke();
+  fillStrokeShip(ctx, bodyFill(ctx, r));
+  ctx.beginPath();
+  ctx.moveTo(0, -r * 0.5);
+  ctx.lineTo(-r * 0.2, r * 0.2);
+  ctx.lineTo(r * 0.2, r * 0.2);
+  ctx.closePath();
+  ctx.fillStyle = (ctx.strokeStyle as string);
+  ctx.globalAlpha = 0.35;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  cockpit(ctx, 0, -r * 0.05, r * 0.22);
 }
 
 function drawDiamond(ctx: CanvasRenderingContext2D, r: number): void {
@@ -78,7 +119,20 @@ function drawDiamond(ctx: CanvasRenderingContext2D, r: number): void {
   ctx.lineTo(0, r * 0.8);
   ctx.lineTo(r * 0.7, 0);
   ctx.closePath();
+  fillStrokeShip(ctx, bodyFill(ctx, r));
+  ctx.beginPath();
+  ctx.moveTo(0, -r * 0.6);
+  ctx.lineTo(-r * 0.4, 0);
+  ctx.lineTo(0, r * 0.45);
+  ctx.lineTo(r * 0.4, 0);
+  ctx.closePath();
+  ctx.strokeStyle = ctx.strokeStyle;
+  ctx.globalAlpha = 0.6;
+  ctx.lineWidth = 1;
   ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = 2;
+  cockpit(ctx, 0, -r * 0.1, r * 0.2);
 }
 
 function drawWing(ctx: CanvasRenderingContext2D, r: number): void {
@@ -90,7 +144,16 @@ function drawWing(ctx: CanvasRenderingContext2D, r: number): void {
   ctx.lineTo(r * 0.5, r * 0.3);
   ctx.lineTo(r * 0.9, r * 0.5);
   ctx.closePath();
+  fillStrokeShip(ctx, bodyFill(ctx, r));
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.7, r * 0.4);
+  ctx.lineTo(-r * 0.4, r * 0.4);
+  ctx.moveTo(r * 0.7, r * 0.4);
+  ctx.lineTo(r * 0.4, r * 0.4);
+  ctx.lineWidth = 1.5;
   ctx.stroke();
+  ctx.lineWidth = 2;
+  cockpit(ctx, 0, -r * 0.2, r * 0.25);
 }
 
 function drawHexagon(ctx: CanvasRenderingContext2D, r: number): void {
@@ -103,7 +166,22 @@ function drawHexagon(ctx: CanvasRenderingContext2D, r: number): void {
     else ctx.lineTo(x, y);
   }
   ctx.closePath();
+  fillStrokeShip(ctx, bodyFill(ctx, r));
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 3) * i - Math.PI / 2;
+    const x = Math.cos(angle) * r * 0.55;
+    const y = Math.sin(angle) * r * 0.55;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.globalAlpha = 0.5;
+  ctx.lineWidth = 1.5;
   ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = 2;
+  cockpit(ctx, 0, 0, r * 0.28);
 }
 
 function drawStar(ctx: CanvasRenderingContext2D, r: number): void {
@@ -117,16 +195,19 @@ function drawStar(ctx: CanvasRenderingContext2D, r: number): void {
     else ctx.lineTo(x, y);
   }
   ctx.closePath();
-  ctx.stroke();
+  fillStrokeShip(ctx, bodyFill(ctx, r));
+  cockpit(ctx, 0, 0, r * 0.3);
 }
 
 function drawCrescent(ctx: CanvasRenderingContext2D, r: number): void {
+  ctx.save();
   ctx.beginPath();
-  ctx.arc(0, 0, r, -0.6, Math.PI + 0.6);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(r * 0.3, 0, r * 0.65, -0.8, Math.PI + 0.8);
-  ctx.stroke();
+  ctx.arc(0, 0, r, -Math.PI * 0.85, Math.PI * 0.85);
+  ctx.arc(r * 0.35, 0, r * 0.7, Math.PI * 0.85, -Math.PI * 0.85, true);
+  ctx.closePath();
+  fillStrokeShip(ctx, bodyFill(ctx, r));
+  ctx.restore();
+  cockpit(ctx, -r * 0.2, 0, r * 0.2);
 }
 
 function drawCrux(ctx: CanvasRenderingContext2D, r: number): void {
@@ -140,7 +221,8 @@ function drawCrux(ctx: CanvasRenderingContext2D, r: number): void {
   ctx.lineTo(-r * 0.85, 0);
   ctx.lineTo(-r * 0.25, -r * 0.2);
   ctx.closePath();
-  ctx.stroke();
+  fillStrokeShip(ctx, bodyFill(ctx, r));
+  cockpit(ctx, 0, 0, r * 0.22);
 }
 
 export const PLAYER_DESIGNS: Record<string, PlayerDesign> = {

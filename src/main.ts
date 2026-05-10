@@ -5,7 +5,7 @@ import { AsteroidManager } from './entities/asteroid.js';
 import { BossManager } from './entities/boss.js';
 import { PowerUpManager } from './entities/powerup.js';
 import { soundManager } from './systems/audio.js';
-import { createStarfield, updateStarfield, drawStarfield } from './background.js';
+import { createBackgroundState, updateBackground, drawBackground, BACKGROUNDS, type BackgroundState } from './background.js';
 import {
   createEffectsState,
   addTrailParticle,
@@ -13,6 +13,8 @@ import {
   drawTrail,
   updateExplosions,
   drawExplosions,
+  updateShockwaves,
+  drawShockwaves,
   updateFloatingTexts,
   drawFloatingTexts,
   updateAnnouncements,
@@ -32,10 +34,11 @@ import {
   selectDesign,
   selectColor,
   selectBulletStyle,
+  selectBackground,
   type CustomizationState,
 } from './ui/customization.js';
 import { createPowerUpIcon, updatePowerUpIconStyles } from './ui/powerup-indicator.js';
-import type { GameState, GameInput, Rocket, Star, ActivePowerUp } from './core/types.js';
+import type { GameState, GameInput, Rocket, ActivePowerUp } from './core/types.js';
 
 class Game {
   canvas: HTMLCanvasElement;
@@ -68,7 +71,7 @@ class Game {
   bossManager: BossManager | null = null;
   powerUpManager: PowerUpManager | null = null;
   rockets: Rocket[] = [];
-  starfield: Star[] = [];
+  background: BackgroundState;
 
   effects = createEffectsState();
   combo: ComboState = { count: 0, lastHitTime: 0 };
@@ -117,6 +120,7 @@ class Game {
       playerDesign: localStorage.getItem('blasto_playerDesign') || 'triangle',
       playerColor: localStorage.getItem('blasto_playerColor') || PLAYER_DESIGNS.triangle.color,
       bulletStyle: localStorage.getItem('blasto_bulletStyle') || 'dual',
+      background: localStorage.getItem('blasto_background') || 'starfield',
     };
 
     this.state = 'start';
@@ -124,7 +128,7 @@ class Game {
     this.high = parseInt(localStorage.getItem('blasto_high') || '0');
     this.highEl.textContent = formatScore(this.high);
 
-    this.starfield = createStarfield(100);
+    this.background = createBackgroundState();
 
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -223,6 +227,13 @@ class Game {
     if (this.state === 'paused') {
       this.saveGameState();
     }
+    for (const id in this.powerUpIcons) {
+      if (this.powerUpIcons[id].parentNode) {
+        this.powerUpIcons[id].parentNode.removeChild(this.powerUpIcons[id]);
+      }
+    }
+    this.powerUpIcons = {};
+    if (this.powerUpManager) this.powerUpManager.activePowerUps = {};
     this.gameOverScreen.classList.add('hidden');
     this.pauseScreen.classList.add('hidden');
     this.playerInfo.classList.remove('paused');
@@ -278,6 +289,11 @@ class Game {
 
     this.effects = createEffectsState();
     this.combo = { count: 0, lastHitTime: 0 };
+    for (const id in this.powerUpIcons) {
+      if (this.powerUpIcons[id].parentNode) {
+        this.powerUpIcons[id].parentNode.removeChild(this.powerUpIcons[id]);
+      }
+    }
     this.powerUpIcons = {};
     this.bossActive = false;
 
@@ -383,6 +399,7 @@ class Game {
       (id) => selectDesign(this.customization, id),
       (color) => selectColor(this.customization, color),
       (id) => selectBulletStyle(this.customization, id),
+      (id) => selectBackground(this.customization, id),
     );
   }
 
@@ -400,6 +417,11 @@ class Game {
 
     this.effects = createEffectsState();
     this.combo = { count: 0, lastHitTime: 0 };
+    for (const id in this.powerUpIcons) {
+      if (this.powerUpIcons[id].parentNode) {
+        this.powerUpIcons[id].parentNode.removeChild(this.powerUpIcons[id]);
+      }
+    }
     this.powerUpIcons = {};
     this.bossActive = false;
 
@@ -503,13 +525,14 @@ class Game {
 
   update(dt: number): void {
     this.starSpeedMult += (this.targetStarSpeedMult - this.starSpeedMult) * dt * 1.5;
-    updateStarfield(this.starfield, dt, this.state === 'playing', this.starSpeedMult);
+    updateBackground(this.background, dt, this.state === 'playing', this.starSpeedMult, this.customization.background);
     const tierBase = 1.0 + this.currentTier * 0.4;
     const excessSpeed = Math.max(0, this.starSpeedMult - tierBase);
     updateSpeedLines(this.effects, dt, excessSpeed, this.canvas.width, this.canvas.height);
     updateShake(this.effects, dt);
     updateFlash(this.effects, dt);
     updateTrail(this.effects, dt);
+    updateShockwaves(this.effects, dt);
     updateFloatingTexts(this.effects.floatingTexts, dt);
     updateAnnouncements(this.effects.announcements, dt);
 
@@ -661,10 +684,11 @@ class Game {
     this.ctx.save();
     this.ctx.translate(offsetX, offsetY);
 
-    this.ctx.fillStyle = '#0b1017';
+    const theme = BACKGROUNDS.find(b => b.id === this.customization.background) ?? BACKGROUNDS[0];
+    this.ctx.fillStyle = theme.base;
     this.ctx.fillRect(-10, -10, this.canvas.width + 20, this.canvas.height + 20);
 
-    drawStarfield(this.ctx, this.starfield);
+    drawBackground(this.ctx, this.background, this.customization.background);
     drawSpeedLines(this.ctx, this.effects);
     drawTrail(this.ctx, this.effects);
 
@@ -674,6 +698,7 @@ class Game {
       if (this.bossManager) this.bossManager.draw(this.ctx);
       if (this.player) this.player.draw(this.ctx, this.powerUpManager?.hasActive('shield') ?? false);
       this.drawRockets();
+      drawShockwaves(this.ctx, this.effects);
       drawExplosions(this.ctx, this.effects.explosions);
       drawFloatingTexts(this.ctx, this.effects.floatingTexts);
       drawAnnouncements(this.ctx, this.effects.announcements);
