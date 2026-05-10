@@ -19,6 +19,13 @@ export function setupInput(handlers: {
   const startScreen = document.getElementById('start-screen') as HTMLElement;
   const gameOverScreen = document.getElementById('game-over-screen') as HTMLElement;
   const pauseScreen = document.getElementById('pause-screen') as HTMLElement;
+  const startBtn = document.getElementById('start-btn') as HTMLElement;
+  const changeNameBtn = document.getElementById('change-name-btn') as HTMLElement;
+  const nameModal = document.getElementById('name-modal') as HTMLElement;
+  const modalNameInput = document.getElementById('modal-name-input') as HTMLInputElement;
+  const modalCancelBtn = document.getElementById('modal-cancel-btn') as HTMLElement;
+  const modalSaveBtn = document.getElementById('modal-save-btn') as HTMLElement;
+  const startNameDisplay = document.getElementById('start-name-display') as HTMLElement;
   const howToPlayBtn = document.getElementById('how-to-play-btn') as HTMLElement;
   const instructionsBackBtn = document.getElementById('instructions-back-btn') as HTMLElement;
   const gameoverBackBtn = document.getElementById('gameover-back-btn') as HTMLElement;
@@ -37,7 +44,6 @@ export function setupInput(handlers: {
     e.preventDefault();
     const touch = e.touches[0];
     handleStart(touch.clientX, touch.clientY);
-    if (handlers.getState() === 'start' && !(e.target as HTMLElement).closest('button')) handlers.onStartGame();
     if (handlers.getState() === 'gameover') handlers.onRestart();
   }, { passive: false });
 
@@ -51,7 +57,6 @@ export function setupInput(handlers: {
 
   canvas.addEventListener('mousedown', (e) => {
     handleStart(e.clientX, e.clientY);
-    if (handlers.getState() === 'start' && !(e.target as HTMLElement).closest('button')) handlers.onStartGame();
     if (handlers.getState() === 'gameover') handlers.onRestart();
   });
 
@@ -62,16 +67,81 @@ export function setupInput(handlers: {
   canvas.addEventListener('mouseup', () => handleEnd());
   canvas.addEventListener('mouseleave', () => handleEnd());
 
-  startScreen.addEventListener('click', (e) => {
-    if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'BUTTON') return;
+  startBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
     if (handlers.getState() === 'start') handlers.onStartGame();
   });
 
-  startScreen.addEventListener('touchstart', (e) => {
-    if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'BUTTON') return;
+  startBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     if (handlers.getState() === 'start') handlers.onStartGame();
   }, { passive: false });
+
+  changeNameBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openNameModal();
+  });
+
+  changeNameBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openNameModal();
+  }, { passive: false });
+
+  modalCancelBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeNameModal();
+  });
+
+  modalCancelBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeNameModal();
+  }, { passive: false });
+
+  modalSaveBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    saveName();
+  });
+
+  modalSaveBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    saveName();
+  }, { passive: false });
+
+  modalNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') saveName();
+    if (e.key === 'Escape') closeNameModal();
+  });
+
+  nameModal.addEventListener('click', (e) => {
+    if (e.target === nameModal) closeNameModal();
+  });
+
+  function openNameModal(): void {
+    const currentName = startNameDisplay.textContent || 'Jugador 1';
+    modalNameInput.value = currentName;
+    nameModal.classList.remove('hidden');
+    setTimeout(() => modalNameInput.focus(), 50);
+  }
+
+  function closeNameModal(): void {
+    nameModal.classList.add('hidden');
+  }
+
+  function saveName(): void {
+    const name = modalNameInput.value.trim();
+    if (!name) {
+      modalNameInput.style.borderBottomColor = '#ef4444';
+      setTimeout(() => { modalNameInput.style.borderBottomColor = '#22d3ee'; }, 1000);
+      return;
+    }
+    localStorage.setItem('blasto_playerName', name);
+    startNameDisplay.textContent = name;
+    closeNameModal();
+  }
 
   gameOverScreen.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'BUTTON') return;

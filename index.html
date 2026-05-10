@@ -79,12 +79,26 @@
         </div>
         <div id="powerup-indicator"></div>
         <div id="start-screen">
-            <input type="text" id="player-name-input" placeholder="Tu nombre" maxlength="12" autocomplete="off">
+            <div id="start-name-row">
+                <span id="start-name-display">Jugador 1</span>
+                <button id="change-name-btn" class="text-btn">Cambiar</button>
+            </div>
             <h1>BLASTO</h1>
-            <p id="start-prompt">Toca la pantalla para despegar</p>
+            <button id="start-btn" class="menu-btn primary-btn">Iniciar</button>
             <button id="design-toggle" class="menu-btn">Personalizar</button>
             <button id="how-to-play-btn" class="menu-btn">Cómo Jugar</button>
             <button id="leaderboard-btn" class="menu-btn">Clasificación</button>
+            <div id="name-modal" class="modal-overlay hidden">
+                <div class="modal-box">
+                    <h3>Cambiar nombre</h3>
+                    <input type="text" id="modal-name-input" placeholder="Tu nombre" maxlength="12" autocomplete="off">
+                    <p class="modal-hint" id="modal-hint">Escribe tu nombre para el marcador</p>
+                    <div class="modal-buttons">
+                        <button id="modal-cancel-btn" class="menu-btn">Cancelar</button>
+                        <button id="modal-save-btn" class="menu-btn primary-btn">Guardar</button>
+                    </div>
+                </div>
+            </div>
         </div>
         <div id="game-over-screen" class="hidden">
             <div class="screen-content">

@@ -101,6 +101,140 @@ body {
     outline: none;
 }
 
+#start-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+#start-name-display {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    opacity: 0.9;
+}
+
+.text-btn {
+    background: transparent;
+    border: none;
+    color: var(--ship);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 8px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.text-btn:hover {
+    opacity: 1;
+}
+
+.primary-btn {
+    border-color: var(--ship);
+    background: var(--ship);
+    color: var(--panel);
+    font-weight: 700;
+    font-size: 18px;
+    padding: 16px 48px;
+    letter-spacing: 3px;
+    box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+}
+
+.primary-btn:hover {
+    background: #38d9f5;
+    border-color: #38d9f5;
+    box-shadow: 0 0 30px rgba(34, 211, 238, 0.5);
+    transform: scale(1.05);
+    color: var(--panel);
+}
+
+.primary-btn:active {
+    transform: scale(0.97);
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(11, 16, 23, 0.85);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+}
+
+.modal-overlay.hidden {
+    display: none;
+}
+
+.modal-box {
+    background: var(--grid);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 340px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.modal-box h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+}
+
+#modal-name-input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--ship);
+    color: var(--text);
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+    width: 100%;
+    padding: 10px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#modal-name-input:focus {
+    border-bottom-color: var(--flame);
+}
+
+.modal-hint {
+    font-size: 13px;
+    opacity: 0.5;
+    margin: 0;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+
+.modal-buttons .menu-btn {
+    flex: 1;
+    margin-top: 0;
+    max-width: none;
+    padding: 12px 20px;
+    font-size: 14px;
+}
+
 .menu-btn {
     margin-top: 16px;
     background: transparent;
@@ -483,7 +617,7 @@ body {
 
 #start-screen h1,
 #start-screen p {
-    cursor: pointer;
+    cursor: default;
 }
 
 #instructions-screen h1,

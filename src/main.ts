@@ -48,7 +48,6 @@ class Game {
   leaderboardScreen: HTMLElement;
   playerInfo: HTMLElement;
   playerNameDisplay: HTMLElement;
-  playerNameInput: HTMLInputElement;
   finalScoreEl: HTMLElement;
   hud: HTMLElement;
   gameoverNameInput: HTMLInputElement;
@@ -90,14 +89,14 @@ class Game {
     this.leaderboardScreen = document.getElementById('leaderboard-screen')!;
     this.playerInfo = document.getElementById('player-info')!;
     this.playerNameDisplay = document.getElementById('player-name-display')!;
-    this.playerNameInput = document.getElementById('player-name-input') as HTMLInputElement;
     this.finalScoreEl = document.getElementById('final-score')!;
     this.hud = document.getElementById('hud')!;
     this.gameoverNameInput = document.getElementById('gameover-name-input') as HTMLInputElement;
 
     this.playerName = localStorage.getItem('blasto_playerName') || 'Player 1';
     this.playerNameDisplay.textContent = this.playerName;
-    this.playerNameInput.value = this.playerName;
+    const startNameDisplay = document.getElementById('start-name-display');
+    if (startNameDisplay) startNameDisplay.textContent = this.playerName;
 
     this.customization = {
       playerDesign: localStorage.getItem('blasto_playerDesign') || 'triangle',
@@ -207,7 +206,6 @@ class Game {
   backToMenu(): void {
     this.gameOverScreen.classList.add('hidden');
     this.startScreen.classList.remove('hidden');
-    this.playerNameInput.value = this.playerName;
     this.state = 'start';
   }
 
@@ -222,16 +220,7 @@ class Game {
   }
 
   startGame(): void {
-    const enteredName = this.playerNameInput.value.trim();
-    if (!enteredName) {
-      this.playerNameInput.focus();
-      this.playerNameInput.style.borderBottomColor = '#ef4444';
-      setTimeout(() => {
-        this.playerNameInput.style.borderBottomColor = '#22d3ee';
-      }, 1000);
-      return;
-    }
-    this.playerName = enteredName;
+    this.playerName = localStorage.getItem('blasto_playerName') || 'Player 1';
     localStorage.setItem('blasto_playerName', this.playerName);
     this.playerNameDisplay.textContent = this.playerName;
 
@@ -291,7 +280,6 @@ class Game {
       this.playerName = newName;
       localStorage.setItem('blasto_playerName', this.playerName);
       this.playerNameDisplay.textContent = this.playerName;
-      this.playerNameInput.value = this.playerName;
     }
     this.startGame();
   }
