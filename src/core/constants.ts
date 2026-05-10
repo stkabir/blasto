@@ -151,6 +151,8 @@ export const PLAYER_DESIGNS: Record<string, PlayerDesign> = {
   crux:      { id: 'crux',      name: 'Cruz',       color: '#f43f5e', draw: drawCrux },
 };
 
+export const GAME_VERSION = '0.7.3';
+
 export const BULLET_STYLES: Record<string, BulletStyle> = {
   glow:      { id: 'glow',      name: 'Brillo' },
   elongated: { id: 'elongated', name: 'Alargado' },

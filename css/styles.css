@@ -604,6 +604,24 @@ body {
     max-width: 100%;
 }
 
+#start-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 260px;
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+#company-name,
+#game-version {
+    font-size: 12px;
+    opacity: 0.45;
+    letter-spacing: 1px;
+    cursor: default;
+}
+
 #start-screen p,
 #game-over-screen p,
 #pause-screen p {
