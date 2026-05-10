@@ -14,12 +14,21 @@ export function createStarfield(count: number): Star[] {
   return stars;
 }
 
-export function updateStarfield(stars: Star[], dt: number): void {
+export function updateStarfield(stars: Star[], dt: number, isPlaying: boolean, speedMult: number): void {
   for (const star of stars) {
-    star.x -= star.speed * dt;
-    if (star.x < -5) {
-      star.x = window.innerWidth + 5;
-      star.y = Math.random() * window.innerHeight;
+    const s = star.speed * speedMult;
+    if (isPlaying) {
+      star.y += s * dt;
+      if (star.y > window.innerHeight + 5) {
+        star.y = -5;
+        star.x = Math.random() * window.innerWidth;
+      }
+    } else {
+      star.x -= s * dt;
+      if (star.x < -5) {
+        star.x = window.innerWidth + 5;
+        star.y = Math.random() * window.innerHeight;
+      }
     }
   }
 }

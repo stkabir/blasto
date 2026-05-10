@@ -78,6 +78,10 @@ class Game {
   customization: CustomizationState;
   bossActive: boolean = false;
 
+  starSpeedMult: number = 1.0;
+  targetStarSpeedMult: number = 1.0;
+  currentTier: number = 0;
+
   lastShootSound = 0;
 
   constructor() {
@@ -223,6 +227,9 @@ class Game {
     this.hud.classList.add('hidden');
     this.startScreen.classList.remove('hidden');
     this.updateStartButtons();
+    this.starSpeedMult = 1.0;
+    this.targetStarSpeedMult = 1.0;
+    this.currentTier = 0;
     this.state = 'start';
   }
 
@@ -272,12 +279,56 @@ class Game {
     this.powerUpIcons = {};
     this.bossActive = false;
 
+    this.starSpeedMult = 1.0;
+    this.targetStarSpeedMult = 1.0;
+
     this.player = new Player(this.canvas.width / 2, this.canvas.height - 150);
     this.player.setDesign(this.customization.playerDesign);
     this.player.setColor(this.customization.playerColor);
     this.player.setBulletStyle(this.customization.bulletStyle);
 
     this.asteroidManager = new AsteroidManager();
+    this.asteroidManager.onPhaseStart = (wave: number) => {
+      this.targetStarSpeedMult = 1.0;
+      const tier = Math.min(4, Math.floor((wave - 1) / 5));
+      if (tier > this.currentTier && wave > 1) {
+        this.currentTier = tier;
+        triggerShake(this.effects, 8, 400);
+        triggerFlash(this.effects, 0.5);
+      }
+    };
+    this.asteroidManager.onPauseStart = (isWaveEnd: boolean, duration: number, waveBeforePause: number) => {
+      const completedPhase = isWaveEnd ? 3 : ((waveBeforePause - 1) % 3) + 1;
+      const upcomingPhase = isWaveEnd ? 1 : completedPhase + 1;
+      const positiveTexts = ['¡Bien hecho!', '¡Sigue así!', '¡Impecable!', '¡Perfecto!', '¡Eso es!', '¡Impresionante!'];
+      const phaseTexts: Record<number, string[]> = {
+        1: ['Prepárate...', 'Vienen más...', 'Allá van...'],
+        2: ['Se acercan...', 'No te confíes...', 'Cuidado...'],
+        3: ['¡Agárrate!', '¡Resiste!', '¡No cedas!'],
+      };
+      const phaseColors: Record<number, string> = { 1: '#22d3ee', 2: '#facc15', 3: '#f43f5e' };
+
+      let txt: string;
+      let color: string;
+
+      if (Math.random() < 0.3) {
+        txt = positiveTexts[Math.floor(Math.random() * positiveTexts.length)];
+        color = '#34d399';
+      } else {
+        const opts = phaseTexts[upcomingPhase];
+        txt = opts[Math.floor(Math.random() * opts.length)];
+        color = phaseColors[upcomingPhase];
+      }
+
+      announce(this.effects.announcements, this.canvas.height, this.canvas.width, txt, {
+        color,
+        fontSize: 42,
+        duration,
+      });
+    };
+    this.asteroidManager.onWaveComplete = () => {
+      this.targetStarSpeedMult = 2.5;
+    };
     this.asteroidManager.onBossWave = (wave: number) => {
       if (this.bossManager) {
         this.bossManager.spawn();
@@ -298,9 +349,11 @@ class Game {
         this.score = save.score;
         this.asteroidManager.jumpToWave(save.wave);
         this.powerUpManager.lastSpawnScore = save.lastSpawnScore ?? save.score;
+        this.currentTier = Math.min(4, Math.floor((save.wave - 1) / 5));
       }
     } catch {
       this.asteroidManager.jumpToWave(0);
+      this.currentTier = 0;
     }
 
     this.canvas.style.transform = 'scale(1.25)';
@@ -344,6 +397,10 @@ class Game {
     this.powerUpIcons = {};
     this.bossActive = false;
 
+    this.starSpeedMult = 1.0;
+    this.targetStarSpeedMult = 1.0;
+    this.currentTier = 0;
+
     this.player = new Player(this.canvas.width / 2, this.canvas.height - 150);
     this.player.setDesign(this.customization.playerDesign);
     this.player.setColor(this.customization.playerColor);
@@ -352,6 +409,47 @@ class Game {
     this.asteroidManager = new AsteroidManager();
     this.asteroidManager.onWarmupComplete = () => {
       this.asteroidManager!.startWaveSystem();
+    };
+    this.asteroidManager.onPhaseStart = (wave: number) => {
+      this.targetStarSpeedMult = 1.0;
+      const tier = Math.min(4, Math.floor((wave - 1) / 5));
+      if (tier > this.currentTier && wave > 1) {
+        this.currentTier = tier;
+        triggerShake(this.effects, 8, 400);
+        triggerFlash(this.effects, 0.5);
+      }
+    };
+    this.asteroidManager.onPauseStart = (isWaveEnd: boolean, duration: number, waveBeforePause: number) => {
+      const completedPhase = isWaveEnd ? 3 : ((waveBeforePause - 1) % 3) + 1;
+      const upcomingPhase = isWaveEnd ? 1 : completedPhase + 1;
+      const positiveTexts = ['¡Bien hecho!', '¡Sigue así!', '¡Impecable!', '¡Perfecto!', '¡Eso es!', '¡Impresionante!'];
+      const phaseTexts: Record<number, string[]> = {
+        1: ['Prepárate...', 'Vienen más...', 'Allá van...'],
+        2: ['Se acercan...', 'No te confíes...', 'Cuidado...'],
+        3: ['¡Agárrate!', '¡Resiste!', '¡No cedas!'],
+      };
+      const phaseColors: Record<number, string> = { 1: '#22d3ee', 2: '#facc15', 3: '#f43f5e' };
+
+      let txt: string;
+      let color: string;
+
+      if (Math.random() < 0.3) {
+        txt = positiveTexts[Math.floor(Math.random() * positiveTexts.length)];
+        color = '#34d399';
+      } else {
+        const opts = phaseTexts[upcomingPhase];
+        txt = opts[Math.floor(Math.random() * opts.length)];
+        color = phaseColors[upcomingPhase];
+      }
+
+      announce(this.effects.announcements, this.canvas.height, this.canvas.width, txt, {
+        color,
+        fontSize: 42,
+        duration,
+      });
+    };
+    this.asteroidManager.onWaveComplete = () => {
+      this.targetStarSpeedMult = 2.5;
     };
     this.asteroidManager.onBossWave = (wave: number) => {
       if (this.bossManager) {
@@ -394,7 +492,8 @@ class Game {
   }
 
   update(dt: number): void {
-    updateStarfield(this.starfield, dt);
+    this.starSpeedMult += (this.targetStarSpeedMult - this.starSpeedMult) * dt * 3.0;
+    updateStarfield(this.starfield, dt, this.state === 'playing', this.starSpeedMult);
     updateShake(this.effects, dt);
     updateFlash(this.effects, dt);
     updateTrail(this.effects, dt);

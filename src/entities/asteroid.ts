@@ -157,8 +157,8 @@ const WAVE_CONFIG: Record<number, [PhaseSpawn, PhaseSpawn, PhaseSpawn]> = {
   ],
 };
 
-const PHASE_PAUSE = 1500;
-const WAVE_PAUSE = 2500;
+const PHASE_PAUSE = 1000;
+const WAVE_PAUSE = 1500;
 
 export class AsteroidManager {
   asteroids: Asteroid[] = [];
@@ -174,6 +174,7 @@ export class AsteroidManager {
   onWaveComplete: ((wave: number) => void) | null = null;
   onBossWave: ((wave: number) => void) | null = null;
   onWarmupComplete: (() => void) | null = null;
+  onPauseStart: ((isWaveEnd: boolean, duration: number, waveBeforePause: number) => void) | null = null;
 
   update(dt: number, frozen: boolean): void {
     for (let i = this.asteroids.length - 1; i >= 0; i--) {
@@ -204,10 +205,13 @@ export class AsteroidManager {
       if (this.currentPhase < 3) {
         this.phaseTimer = PHASE_PAUSE;
         this.currentPhase = 0;
+        if (this.onPauseStart) this.onPauseStart(false, PHASE_PAUSE, this.currentWave);
       } else {
+        const waveCompleted = this.currentWave;
         this.phaseTimer = WAVE_PAUSE;
         this.currentPhase = 0;
         this.currentWave++;
+        if (this.onPauseStart) this.onPauseStart(true, WAVE_PAUSE, waveCompleted);
         if (this.onWaveComplete) this.onWaveComplete(this.currentWave);
       }
     }
@@ -248,9 +252,11 @@ export class AsteroidManager {
   notifyBossDefeated(): void {
     if (!this.waitingForBoss) return;
     this.waitingForBoss = false;
+    const waveCompleted = this.currentWave;
     this.phaseTimer = WAVE_PAUSE;
     this.currentPhase = 0;
     this.currentWave++;
+    if (this.onPauseStart) this.onPauseStart(true, WAVE_PAUSE, waveCompleted);
     if (this.onWaveComplete) this.onWaveComplete(this.currentWave);
   }
 
