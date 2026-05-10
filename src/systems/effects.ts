@@ -251,16 +251,16 @@ export function updateFlash(effects: EffectsState, dt: number): void {
 }
 
 export function updateSpeedLines(effects: EffectsState, dt: number, speedMult: number, canvasWidth: number, canvasHeight: number): void {
-  if (speedMult <= 1.3) {
+  if (speedMult <= 0.3) {
     effects.speedLines = [];
     effects.speedLineTimer = 0;
     return;
   }
 
   effects.speedLineTimer += dt;
-  const intensity = speedMult - 1.0;
-  const spawnInterval = 0.03 / intensity;
-  const maxLines = Math.floor(intensity * 25);
+  const intensity = speedMult;
+  const spawnInterval = 0.025 / intensity;
+  const maxLines = Math.floor(intensity * 30);
 
   while (effects.speedLineTimer >= spawnInterval && effects.speedLines.length < maxLines) {
     effects.speedLineTimer -= spawnInterval;

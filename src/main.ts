@@ -504,7 +504,9 @@ class Game {
   update(dt: number): void {
     this.starSpeedMult += (this.targetStarSpeedMult - this.starSpeedMult) * dt * 1.5;
     updateStarfield(this.starfield, dt, this.state === 'playing', this.starSpeedMult);
-    updateSpeedLines(this.effects, dt, this.starSpeedMult, this.canvas.width, this.canvas.height);
+    const tierBase = 1.0 + this.currentTier * 0.4;
+    const excessSpeed = Math.max(0, this.starSpeedMult - tierBase);
+    updateSpeedLines(this.effects, dt, excessSpeed, this.canvas.width, this.canvas.height);
     updateShake(this.effects, dt);
     updateFlash(this.effects, dt);
     updateTrail(this.effects, dt);
