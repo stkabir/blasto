@@ -52,23 +52,19 @@ export class Player {
   update(dt: number, keys: GameInput, frozen: boolean, hasTripleActive: boolean): void {
     const speed = PLAYER_CONFIG.speed;
 
-    if (keys.left) {
-      this.targetX = this.x - 100;
-    }
-    if (keys.right) {
-      this.targetX = this.x + 100;
-    }
-
     if (keys.touchX !== null) {
-      this.targetX = keys.touchX;
+      this.x = Math.max(this.radius, Math.min(window.innerWidth - this.radius, keys.touchX));
+    } else {
+      if (keys.left) {
+        this.x -= speed * dt;
+      }
+      if (keys.right) {
+        this.x += speed * dt;
+      }
+      this.x = Math.max(this.radius, Math.min(window.innerWidth - this.radius, this.x));
     }
 
-    const dx = this.targetX - this.x;
-    if (Math.abs(dx) > 5) {
-      this.x += Math.sign(dx) * speed * dt;
-    }
-
-    this.x = Math.max(this.radius, Math.min(window.innerWidth - this.radius, this.x));
+    this.targetX = this.x;
 
     this.tryFire(hasTripleActive);
     this.updateBullets(dt);
