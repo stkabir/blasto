@@ -4,6 +4,7 @@ import { soundManager } from '../systems/audio.js';
 export function setupInput(handlers: {
   onTogglePause: () => void;
   onStartGame: () => void;
+  onResumeGame: () => void;
   onRestart: () => void;
   onShowInstructions: () => void;
   onHideInstructions: () => void;
@@ -23,6 +24,7 @@ export function setupInput(handlers: {
   const pauseBackBtn = document.getElementById('pause-back-btn') as HTMLElement;
   const soundToggleBtn = document.getElementById('sound-toggle-btn') as HTMLElement;
   const startBtn = document.getElementById('start-btn') as HTMLElement;
+  const resumeBtn = document.getElementById('resume-btn') as HTMLElement;
   const changeNameBtn = document.getElementById('change-name-btn') as HTMLElement;
   const nameModal = document.getElementById('name-modal') as HTMLElement;
   const modalNameInput = document.getElementById('modal-name-input') as HTMLInputElement;
@@ -79,6 +81,17 @@ export function setupInput(handlers: {
     e.preventDefault();
     e.stopPropagation();
     if (handlers.getState() === 'start') handlers.onStartGame();
+  }, { passive: false });
+
+  resumeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (handlers.getState() === 'start') handlers.onResumeGame();
+  });
+
+  resumeBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (handlers.getState() === 'start') handlers.onResumeGame();
   }, { passive: false });
 
   changeNameBtn.addEventListener('click', (e) => {

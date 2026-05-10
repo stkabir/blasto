@@ -156,6 +156,28 @@ body {
     transform: scale(0.97);
 }
 
+.secondary-btn {
+    border-color: var(--ship);
+    background: transparent;
+    color: var(--ship);
+    font-weight: 600;
+    font-size: 16px;
+    padding: 14px 36px;
+    letter-spacing: 2px;
+    opacity: 0.75;
+}
+
+.secondary-btn:hover {
+    opacity: 1;
+    background: rgba(34, 211, 238, 0.1);
+    transform: scale(1.05);
+    color: var(--ship);
+}
+
+.secondary-btn:active {
+    transform: scale(0.97);
+}
+
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -605,13 +627,16 @@ body {
 }
 
 #start-footer {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
     max-width: 260px;
-    margin-top: auto;
-    padding-top: 20px;
 }
 
 #company-name,

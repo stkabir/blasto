@@ -1,4 +1,4 @@
-import { GAME_CONFIG, PLAYER_DESIGNS, formatScore } from './core/constants.js';
+import { GAME_CONFIG, PLAYER_DESIGNS, formatScore, SAVE_KEY } from './core/constants.js';
 import { setupInput } from './core/input.js';
 import { Player } from './entities/player.js';
 import { AsteroidManager } from './entities/asteroid.js';
@@ -50,6 +50,8 @@ class Game {
   playerInfo: HTMLElement;
   playerNameDisplay: HTMLElement;
   finalScoreEl: HTMLElement;
+  resumeBtn: HTMLElement;
+  startBtn: HTMLElement;
   hud: HTMLElement;
   gameoverNameInput: HTMLInputElement;
 
@@ -95,11 +97,15 @@ class Game {
     this.finalScoreEl = document.getElementById('final-score')!;
     this.hud = document.getElementById('hud')!;
     this.gameoverNameInput = document.getElementById('gameover-name-input') as HTMLInputElement;
+    this.resumeBtn = document.getElementById('resume-btn')!;
+    this.startBtn = document.getElementById('start-btn')!;
 
     this.playerName = localStorage.getItem('blasto_playerName') || 'Player 1';
     this.playerNameDisplay.textContent = this.playerName;
     const startNameDisplay = document.getElementById('start-name-display');
     if (startNameDisplay) startNameDisplay.textContent = this.playerName;
+
+    this.updateStartButtons();
 
     this.customization = {
       playerDesign: localStorage.getItem('blasto_playerDesign') || 'triangle',
@@ -120,6 +126,7 @@ class Game {
     this.keys = setupInput({
       onTogglePause: () => this.togglePause(),
       onStartGame: () => this.startGame(),
+      onResumeGame: () => this.resumeGame(),
       onRestart: () => this.restart(),
       onShowInstructions: () => this.showInstructions(),
       onHideInstructions: () => this.hideInstructions(),
@@ -207,12 +214,107 @@ class Game {
   }
 
   backToMenu(): void {
+    if (this.state === 'paused') {
+      this.saveGameState();
+    }
     this.gameOverScreen.classList.add('hidden');
     this.pauseScreen.classList.add('hidden');
     this.playerInfo.classList.remove('paused');
     this.hud.classList.add('hidden');
     this.startScreen.classList.remove('hidden');
+    this.updateStartButtons();
     this.state = 'start';
+  }
+
+  saveGameState(): void {
+    if (!this.asteroidManager || !this.powerUpManager) return;
+    const save = {
+      score: this.score,
+      wave: this.asteroidManager.currentWave,
+      lastSpawnScore: this.powerUpManager.lastSpawnScore,
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+  }
+
+  hasSavedGame(): boolean {
+    try {
+      const data = localStorage.getItem(SAVE_KEY);
+      if (!data) return false;
+      const save = JSON.parse(data);
+      return typeof save.score === 'number' && typeof save.wave === 'number';
+    } catch {
+      return false;
+    }
+  }
+
+  updateStartButtons(): void {
+    const hasSave = this.hasSavedGame();
+    this.resumeBtn.classList.toggle('hidden', !hasSave);
+    if (hasSave) {
+      this.startBtn.textContent = 'Nueva partida';
+      this.startBtn.classList.remove('primary-btn');
+      this.startBtn.classList.add('secondary-btn');
+    } else {
+      this.startBtn.textContent = 'Iniciar';
+      this.startBtn.classList.add('primary-btn');
+      this.startBtn.classList.remove('secondary-btn');
+    }
+  }
+
+  resumeGame(): void {
+    this.state = 'playing';
+    this.startScreen.classList.add('hidden');
+    this.gameOverScreen.classList.add('hidden');
+    this.hud.classList.remove('hidden');
+
+    this.effects = createEffectsState();
+    this.combo = { count: 0, lastHitTime: 0 };
+    this.powerUpIcons = {};
+    this.bossActive = false;
+
+    this.player = new Player(this.canvas.width / 2, this.canvas.height - 150);
+    this.player.setDesign(this.customization.playerDesign);
+    this.player.setColor(this.customization.playerColor);
+    this.player.setBulletStyle(this.customization.bulletStyle);
+
+    this.asteroidManager = new AsteroidManager();
+    this.asteroidManager.onBossWave = (wave: number) => {
+      if (this.bossManager) {
+        this.bossManager.spawn();
+        this.bossActive = true;
+        triggerShake(this.effects, 10, 300);
+        announce(this.effects.announcements, this.canvas.height, this.canvas.width, '¡JEFE!', { color: '#ef4444', fontSize: 80 });
+      }
+    };
+    this.bossManager = new BossManager();
+
+    this.powerUpManager = new PowerUpManager();
+    this.rockets = [];
+
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (raw) {
+        const save = JSON.parse(raw);
+        this.score = save.score;
+        this.asteroidManager.jumpToWave(save.wave);
+        this.powerUpManager.lastSpawnScore = save.lastSpawnScore ?? save.score;
+      }
+    } catch {
+      this.asteroidManager.jumpToWave(0);
+    }
+
+    this.canvas.style.transform = 'scale(1.25)';
+    this.canvas.style.opacity = '0';
+    this.canvas.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease-out';
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.canvas.style.transform = 'scale(1)';
+        this.canvas.style.opacity = '1';
+      });
+    });
+
+    this.updateHUD();
   }
 
   renderCustomizeList(): void {
@@ -226,6 +328,7 @@ class Game {
   }
 
   startGame(): void {
+    localStorage.removeItem(SAVE_KEY);
     this.playerName = localStorage.getItem('blasto_playerName') || 'Player 1';
     localStorage.setItem('blasto_playerName', this.playerName);
     this.playerNameDisplay.textContent = this.playerName;
@@ -354,6 +457,7 @@ class Game {
 
   async gameOver(): Promise<void> {
     this.state = 'gameover';
+    localStorage.removeItem(SAVE_KEY);
     soundManager.play('gameover');
     triggerFlash(this.effects, 0.6);
     triggerShake(this.effects, 12, 300);

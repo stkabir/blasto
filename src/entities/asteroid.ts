@@ -223,6 +223,16 @@ export class AsteroidManager {
     this.startNextPhaseOrWave();
   }
 
+  jumpToWave(wave: number): void {
+    this.currentWave = wave;
+    this.currentPhase = 0;
+    this.phaseTimer = 0;
+    this.waveSystemActive = true;
+    this.warmupActive = false;
+    this.waitingForBoss = false;
+    this.asteroids = [];
+  }
+
   spawnInitial(): void {
     this.warmupActive = true;
     const left = new Asteroid(window.innerWidth * 0.25, -30, 'LIGHT');

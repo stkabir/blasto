@@ -58,6 +58,8 @@ export function formatScore(n: number): string {
   return n.toLocaleString('es');
 }
 
+export const SAVE_KEY = 'blasto_savedGame';
+
 export const SHIP_COLORS = ['#22d3ee', '#e879f9', '#a3e635', '#818cf8', '#facc15', '#fb923c', '#f43f5e', '#cbd5e1', '#10b981', '#8b5cf6'];
 
 function drawTriangle(ctx: CanvasRenderingContext2D, r: number): void {
