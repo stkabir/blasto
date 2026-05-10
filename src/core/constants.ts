@@ -54,6 +54,10 @@ export const POWERUP_REGULAR_CHANCE = 0.25;
 export const POWERUP_HP = 7;
 export const LIFE_INVULNERABILITY_DURATION = 4000;
 
+export function formatScore(n: number): string {
+  return n.toLocaleString('es');
+}
+
 export const SHIP_COLORS = ['#22d3ee', '#e879f9', '#a3e635', '#818cf8', '#facc15', '#fb923c', '#f43f5e', '#cbd5e1', '#10b981', '#8b5cf6'];
 
 function drawTriangle(ctx: CanvasRenderingContext2D, r: number): void {

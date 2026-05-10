@@ -1,5 +1,6 @@
 import type { LeaderboardEntry } from '../core/types.js';
 import { getDesignSVG } from '../core/utils.js';
+import { formatScore } from '../core/constants.js';
 
 export function getLocalLeaderboard(): LeaderboardEntry[] {
   try {
@@ -74,7 +75,7 @@ function renderLeaderboardRows(
       <span class="lb-rank">${i + 1}</span>
       ${shipHtml}
       <span class="lb-name">${escapeHtml(entry.name)}</span>
-      <span class="lb-score">${entry.score}</span>
+      <span class="lb-score">${formatScore(entry.score)}</span>
     `;
     container.appendChild(row);
   });

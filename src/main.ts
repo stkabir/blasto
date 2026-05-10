@@ -1,4 +1,4 @@
-import { GAME_CONFIG, PLAYER_DESIGNS } from './core/constants.js';
+import { GAME_CONFIG, PLAYER_DESIGNS, formatScore } from './core/constants.js';
 import { setupInput } from './core/input.js';
 import { Player } from './entities/player.js';
 import { AsteroidManager } from './entities/asteroid.js';
@@ -108,7 +108,7 @@ class Game {
     this.state = 'start';
     this.score = 0;
     this.high = parseInt(localStorage.getItem('blasto_high') || '0');
-    this.highEl.textContent = String(this.high);
+    this.highEl.textContent = formatScore(this.high);
 
     this.starfield = createStarfield(100);
 
@@ -382,7 +382,7 @@ class Game {
     this.gameOverScreen.style.transform = 'scale(0.9)';
     this.gameOverScreen.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
 
-    this.highEl.textContent = String(this.high);
+    this.highEl.textContent = formatScore(this.high);
     this.playerInfo.classList.remove('paused');
     this.hud.classList.add('hidden');
 
@@ -398,7 +398,7 @@ class Game {
     );
 
     setTimeout(() => {
-      this.finalScoreEl.textContent = `${this.score}`;
+      this.finalScoreEl.textContent = formatScore(this.score);
       this.finalScoreEl.style.opacity = '1';
       this.finalScoreEl.style.transform = 'scale(1)';
       this.finalScoreEl.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
@@ -413,7 +413,7 @@ class Game {
   }
 
   updateHUD(): void {
-    this.scoreEl.textContent = String(this.score);
+    this.scoreEl.textContent = formatScore(this.score);
   }
 
   updatePowerUpIndicator(): void {
