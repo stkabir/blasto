@@ -306,8 +306,9 @@ class Game {
 
     this.player.update(dt, this.keys, frozen, hasTriple);
 
-    if (Date.now() - this.player.lastFireTime < 20) {
-      this.lastShootSound = Date.now();
+    const now = Date.now();
+    if (now - this.player.lastFireTime < 20 && now - this.lastShootSound > 100) {
+      this.lastShootSound = now;
       soundManager.play('shoot');
     }
 

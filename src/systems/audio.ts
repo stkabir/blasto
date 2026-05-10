@@ -42,15 +42,15 @@ export class SoundManager {
   private playShoot(ctx: AudioContext): void {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(800, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.05);
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1200, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.03);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
     osc.connect(gain);
     gain.connect(this.masterGain!);
     osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.05);
+    osc.stop(ctx.currentTime + 0.03);
   }
 
   private playHit(ctx: AudioContext): void {
@@ -68,26 +68,17 @@ export class SoundManager {
   }
 
   private playExplode(ctx: AudioContext): void {
-    const bufferSize = ctx.sampleRate * 0.3;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
-    }
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(600, ctx.currentTime);
-    filter.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3);
+    const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-    source.connect(filter);
-    filter.connect(gain);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(400, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.4);
+    gain.gain.setValueAtTime(0.25, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.connect(gain);
     gain.connect(this.masterGain!);
-    source.start(ctx.currentTime);
-    source.stop(ctx.currentTime + 0.3);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.4);
   }
 
   private playPowerup(ctx: AudioContext): void {
