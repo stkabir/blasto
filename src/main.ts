@@ -299,7 +299,7 @@ class Game {
     };
     this.asteroidManager.onPauseStart = (isWaveEnd: boolean, duration: number, waveBeforePause: number) => {
       const completedPhase = isWaveEnd ? 3 : ((waveBeforePause - 1) % 3) + 1;
-      const upcomingPhase = isWaveEnd ? 1 : completedPhase + 1;
+      const upcomingPhase = isWaveEnd ? 1 : (completedPhase % 3) + 1;
       const positiveTexts = ['¡Bien hecho!', '¡Sigue así!', '¡Impecable!', '¡Perfecto!', '¡Eso es!', '¡Impresionante!'];
       const phaseTexts: Record<number, string[]> = {
         1: ['Prepárate...', 'Vienen más...', 'Allá van...'],
@@ -318,6 +318,10 @@ class Game {
         const opts = phaseTexts[upcomingPhase];
         txt = opts[Math.floor(Math.random() * opts.length)];
         color = phaseColors[upcomingPhase];
+      }
+
+      if (completedPhase === 3) {
+        this.targetStarSpeedMult = 2.5;
       }
 
       announce(this.effects.announcements, this.canvas.height, this.canvas.width, txt, {
@@ -421,7 +425,7 @@ class Game {
     };
     this.asteroidManager.onPauseStart = (isWaveEnd: boolean, duration: number, waveBeforePause: number) => {
       const completedPhase = isWaveEnd ? 3 : ((waveBeforePause - 1) % 3) + 1;
-      const upcomingPhase = isWaveEnd ? 1 : completedPhase + 1;
+      const upcomingPhase = isWaveEnd ? 1 : (completedPhase % 3) + 1;
       const positiveTexts = ['¡Bien hecho!', '¡Sigue así!', '¡Impecable!', '¡Perfecto!', '¡Eso es!', '¡Impresionante!'];
       const phaseTexts: Record<number, string[]> = {
         1: ['Prepárate...', 'Vienen más...', 'Allá van...'],
@@ -440,6 +444,10 @@ class Game {
         const opts = phaseTexts[upcomingPhase];
         txt = opts[Math.floor(Math.random() * opts.length)];
         color = phaseColors[upcomingPhase];
+      }
+
+      if (completedPhase === 3) {
+        this.targetStarSpeedMult = 2.5;
       }
 
       announce(this.effects.announcements, this.canvas.height, this.canvas.width, txt, {
