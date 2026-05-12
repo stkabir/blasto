@@ -20,6 +20,14 @@ COPY css/ /usr/share/nginx/html/css/
 COPY index.html /usr/share/nginx/html/
 COPY favicon.svg /usr/share/nginx/html/
 COPY favicon.png /usr/share/nginx/html/
+COPY favicon-64.png /usr/share/nginx/html/
+COPY favicon-128.png /usr/share/nginx/html/
+COPY favicon-192.png /usr/share/nginx/html/
+COPY favicon-512.png /usr/share/nginx/html/
+COPY social.png /usr/share/nginx/html/
+COPY robots.txt /usr/share/nginx/html/
+COPY sitemap.xml /usr/share/nginx/html/
+COPY site.webmanifest /usr/share/nginx/html/
 
 EXPOSE 80
 
