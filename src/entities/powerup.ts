@@ -1,4 +1,4 @@
-import { POWERUP_TYPES, POWERUP_SPAWN_SCORE, POWERUP_LIFE_SCORE, POWERUP_LIFE_CHANCE, POWERUP_REGULAR_CHANCE, POWERUP_HP } from '../core/constants.js';
+import { POWERUP_TYPES, POWERUP_SPAWN_KILLS, POWERUP_LIFE_CHANCE, POWERUP_REGULAR_CHANCE, POWERUP_HP } from '../core/constants.js';
 import type { PowerUpType, ActivePowerUp, PlayerBullet } from '../core/types.js';
 
 type ActivePowerUpsMap = Record<string, ActivePowerUp>;
@@ -51,12 +51,12 @@ export class PowerUp {
 export class PowerUpManager {
   powerups: PowerUp[];
   activePowerUps: ActivePowerUpsMap;
-  lastSpawnScore: number;
+  killsSinceLastSpawn: number;
 
   constructor() {
     this.powerups = [];
     this.activePowerUps = {};
-    this.lastSpawnScore = 0;
+    this.killsSinceLastSpawn = 0;
   }
 
   update(dt: number, frozen: boolean): void {
@@ -87,18 +87,14 @@ export class PowerUpManager {
     return null;
   }
 
-  trySpawnPowerUp(score: number): void {
-    const scoreThreshold = Math.floor(score / POWERUP_SPAWN_SCORE);
-    const lastThreshold = Math.floor(this.lastSpawnScore / POWERUP_SPAWN_SCORE);
+  onAsteroidKilled(): void {
+    this.killsSinceLastSpawn++;
+    if (this.killsSinceLastSpawn >= POWERUP_SPAWN_KILLS) {
+      this.killsSinceLastSpawn = 0;
 
-    if (scoreThreshold > lastThreshold) {
-      this.lastSpawnScore = score;
-
-      if (score >= POWERUP_LIFE_SCORE && !this.activePowerUps.life) {
-        if (Math.random() < POWERUP_LIFE_CHANCE) {
-          this.spawn(POWERUP_TYPES.LIFE);
-          return;
-        }
+      if (!this.activePowerUps.life && Math.random() < POWERUP_LIFE_CHANCE) {
+        this.spawn(POWERUP_TYPES.LIFE);
+        return;
       }
 
       if (Math.random() < POWERUP_REGULAR_CHANCE) {
@@ -186,6 +182,6 @@ export class PowerUpManager {
   clear(): void {
     this.powerups = [];
     this.activePowerUps = {};
-    this.lastSpawnScore = 0;
+    this.killsSinceLastSpawn = 0;
   }
 }

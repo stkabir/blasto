@@ -45,7 +45,7 @@ export const BACKGROUNDS: BackgroundTheme[] = [
 const NEBULA_COLORS_BY_THEME: Record<string, string[]> = {
   nebula:  ['#7c3aed', '#db2777', '#0ea5e9', '#f59e0b'],
   deep:    ['#1e3a8a', '#312e81', '#831843'],
-  aurora:  ['#10b981', '#22d3ee', '#a78bfa'],
+  aurora:  ['#10b981', '#22ff9e', '#a78bfa'],
   crimson: ['#dc2626', '#9a3412', '#f59e0b'],
 };
 
@@ -239,7 +239,7 @@ function drawDistantBodies(ctx: CanvasRenderingContext2D, state: BackgroundState
 
 function drawCyberGrid(ctx: CanvasRenderingContext2D, state: BackgroundState, w: number, h: number): void {
   ctx.save();
-  ctx.strokeStyle = 'rgba(34, 211, 238, 0.18)';
+  ctx.strokeStyle = 'rgba(34, 255, 158, 0.18)';
   ctx.lineWidth = 1;
   const step = 60;
   const off = state.gridOffset;
@@ -267,7 +267,7 @@ function drawCyberGrid(ctx: CanvasRenderingContext2D, state: BackgroundState, w:
 function drawAuroraWaves(ctx: CanvasRenderingContext2D, state: BackgroundState, w: number, h: number): void {
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
-  const colors = ['#10b981', '#22d3ee', '#a78bfa'];
+  const colors = ['#10b981', '#22ff9e', '#a78bfa'];
   for (let i = 0; i < 3; i++) {
     const phase = state.auroraPhase + i * 1.3;
     ctx.beginPath();

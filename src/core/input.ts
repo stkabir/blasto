@@ -74,6 +74,7 @@ export function setupInput(handlers: {
 
   startBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    soundManager.play('menu_click');
     if (handlers.getState() === 'start') handlers.onStartGame();
   });
 
@@ -85,6 +86,7 @@ export function setupInput(handlers: {
 
   resumeBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    soundManager.play('menu_click');
     if (handlers.getState() === 'start') handlers.onResumeGame();
   });
 
@@ -96,6 +98,7 @@ export function setupInput(handlers: {
 
   changeNameBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    soundManager.play('menu_click');
     openNameModal();
   });
 
@@ -107,6 +110,7 @@ export function setupInput(handlers: {
 
   modalCancelBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    soundManager.play('menu_back');
     closeNameModal();
   });
 
@@ -118,6 +122,7 @@ export function setupInput(handlers: {
 
   modalSaveBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    soundManager.play('menu_click');
     saveName();
   });
 
@@ -151,7 +156,7 @@ export function setupInput(handlers: {
     const name = modalNameInput.value.trim();
     if (!name) {
       modalNameInput.style.borderBottomColor = '#ef4444';
-      setTimeout(() => { modalNameInput.style.borderBottomColor = '#22d3ee'; }, 1000);
+      setTimeout(() => { modalNameInput.style.borderBottomColor = '#22ff9e'; }, 1000);
       return;
     }
     localStorage.setItem('blasto_playerName', name);
@@ -182,10 +187,10 @@ export function setupInput(handlers: {
     if (state === 'playing' || state === 'paused') handlers.onTogglePause();
   }, { passive: false });
 
-  instructionsBackBtn.addEventListener('click', (e) => { e.stopPropagation(); handlers.onHideInstructions(); });
+  instructionsBackBtn.addEventListener('click', (e) => { e.stopPropagation(); soundManager.play('menu_back'); handlers.onHideInstructions(); });
   instructionsBackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlers.onHideInstructions(); }, { passive: false });
 
-  gameoverBackBtn.addEventListener('click', (e) => { e.stopPropagation(); handlers.onBackToMenu(); });
+  gameoverBackBtn.addEventListener('click', (e) => { e.stopPropagation(); soundManager.play('menu_back'); handlers.onBackToMenu(); });
   gameoverBackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlers.onBackToMenu(); }, { passive: false });
 
   pauseScreen.addEventListener('click', () => {
@@ -197,7 +202,7 @@ export function setupInput(handlers: {
     if (handlers.getState() === 'paused') handlers.onTogglePause();
   }, { passive: false });
 
-  pauseBackBtn.addEventListener('click', (e) => { e.stopPropagation(); handlers.onBackToMenu(); });
+  pauseBackBtn.addEventListener('click', (e) => { e.stopPropagation(); soundManager.play('menu_back'); handlers.onBackToMenu(); });
   pauseBackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlers.onBackToMenu(); }, { passive: false });
 
   function updateSoundButton(): void {
@@ -223,22 +228,22 @@ export function setupInput(handlers: {
     updateSoundButton();
   }, { passive: false });
 
-  howToPlayBtn.addEventListener('click', (e) => { e.stopPropagation(); handlers.onShowInstructions(); });
+  howToPlayBtn.addEventListener('click', (e) => { e.stopPropagation(); soundManager.play('menu_click'); handlers.onShowInstructions(); });
   howToPlayBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlers.onShowInstructions(); }, { passive: false });
 
-  leaderboardBtn.addEventListener('click', (e) => { e.stopPropagation(); handlers.onShowLeaderboard(); });
+  leaderboardBtn.addEventListener('click', (e) => { e.stopPropagation(); soundManager.play('menu_click'); handlers.onShowLeaderboard(); });
   leaderboardBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlers.onShowLeaderboard(); }, { passive: false });
 
-  leaderboardBackBtn.addEventListener('click', (e) => { e.stopPropagation(); handlers.onHideLeaderboard(); });
+  leaderboardBackBtn.addEventListener('click', (e) => { e.stopPropagation(); soundManager.play('menu_back'); handlers.onHideLeaderboard(); });
   leaderboardBackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlers.onHideLeaderboard(); }, { passive: false });
 
   if (designToggle) {
-    designToggle.addEventListener('click', (e) => { e.stopPropagation(); handlers.onShowCustomize(); });
+    designToggle.addEventListener('click', (e) => { e.stopPropagation(); soundManager.play('menu_click'); handlers.onShowCustomize(); });
     designToggle.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlers.onShowCustomize(); }, { passive: false });
   }
 
   if (customizeBackBtn) {
-    customizeBackBtn.addEventListener('click', (e) => { e.stopPropagation(); handlers.onHideCustomize(); });
+    customizeBackBtn.addEventListener('click', (e) => { e.stopPropagation(); soundManager.play('menu_back'); handlers.onHideCustomize(); });
     customizeBackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlers.onHideCustomize(); }, { passive: false });
   }
 

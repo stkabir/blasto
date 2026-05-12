@@ -40,15 +40,14 @@ export const BOSS_CONFIG = {
 };
 
 export const POWERUP_TYPES: Record<string, PowerUpType> = {
-  TRIPLE: { id: 'triple', name: 'Triple', duration: 10000, color: '#22d3ee', icon: '⚡' },
+  TRIPLE: { id: 'triple', name: 'Triple', duration: 10000, color: '#22ff9e', icon: '⚡' },
   ROCKET: { id: 'rocket', name: 'Rocket', duration: 0, color: '#f59e0b', icon: '🚀' },
   SHIELD: { id: 'shield', name: 'Shield', duration: 10000, color: '#34d399', icon: '🛡' },
   FREEZE: { id: 'freeze', name: 'Freeze', duration: 8000, color: '#a78bfa', icon: '❄' },
   LIFE:   { id: 'life',   name: 'Life',   duration: 0, color: '#ef4444', icon: '❤' },
 };
 
-export const POWERUP_SPAWN_SCORE = 100;
-export const POWERUP_LIFE_SCORE = 150;
+export const POWERUP_SPAWN_KILLS = 10;
 export const POWERUP_LIFE_CHANCE = 0.08;
 export const POWERUP_REGULAR_CHANCE = 0.15;
 export const POWERUP_HP = 7;
@@ -60,7 +59,7 @@ export function formatScore(n: number): string {
 
 export const SAVE_KEY = 'blasto_savedGame';
 
-export const SHIP_COLORS = ['#22d3ee', '#e879f9', '#a3e635', '#818cf8', '#facc15', '#fb923c', '#f43f5e', '#cbd5e1', '#10b981', '#8b5cf6'];
+export const SHIP_COLORS = ['#22ff9e', '#e879f9', '#a3e635', '#818cf8', '#facc15', '#fb923c', '#f43f5e', '#cbd5e1', '#10b981', '#8b5cf6'];
 
 function fillStrokeShip(ctx: CanvasRenderingContext2D, fill: string): void {
   ctx.fillStyle = fill;
@@ -226,7 +225,7 @@ function drawCrux(ctx: CanvasRenderingContext2D, r: number): void {
 }
 
 export const PLAYER_DESIGNS: Record<string, PlayerDesign> = {
-  triangle:  { id: 'triangle',  name: 'Triángulo',  color: '#22d3ee', draw: drawTriangle },
+  triangle:  { id: 'triangle',  name: 'Triángulo',  color: '#22ff9e', draw: drawTriangle },
   diamond:   { id: 'diamond',   name: 'Diamante',   color: '#e879f9', draw: drawDiamond },
   wing:      { id: 'wing',      name: 'Ala',        color: '#a3e635', draw: drawWing },
   hexagon:   { id: 'hexagon',   name: 'Hexágono',   color: '#38bdf8', draw: drawHexagon },

@@ -38,6 +38,7 @@ import {
   type CustomizationState,
 } from './ui/customization.js';
 import { createPowerUpIcon, updatePowerUpIconStyles } from './ui/powerup-indicator.js';
+import { getLogoSVG } from './ui/logo.js';
 import type { GameState, GameInput, Rocket, ActivePowerUp } from './core/types.js';
 
 class Game {
@@ -133,6 +134,9 @@ class Game {
     this.resize();
     window.addEventListener('resize', () => this.resize());
 
+    this.initSplash();
+    this.initLogo();
+
     this.keys = setupInput({
       onTogglePause: () => this.togglePause(),
       onStartGame: () => this.startGame(),
@@ -154,6 +158,28 @@ class Game {
   resize(): void {
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
+  }
+
+  initSplash(): void {
+    const splash = document.getElementById('splash-screen');
+    const splashLogo = document.getElementById('splash-logo');
+    if (splashLogo) splashLogo.innerHTML = getLogoSVG(120);
+    if (splash) {
+      setTimeout(() => {
+        splash.classList.add('hidden');
+        setTimeout(() => { splash.style.display = 'none'; }, 400);
+      }, 800);
+    }
+  }
+
+  initLogo(): void {
+    const container = document.getElementById('logo-container');
+    if (container) {
+      container.innerHTML = `<div class="logo-wordmark">
+        <span class="logo-icon">${getLogoSVG(56)}</span>
+        <h1 class="logo-title">BLASTO</h1>
+      </div>`;
+    }
   }
 
   togglePause(): void {
@@ -251,7 +277,7 @@ class Game {
     const save = {
       score: this.score,
       wave: this.asteroidManager.currentWave,
-      lastSpawnScore: this.powerUpManager.lastSpawnScore,
+      killsSinceLastSpawn: this.powerUpManager.killsSinceLastSpawn,
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(save));
   }
@@ -311,6 +337,8 @@ class Game {
       const tier = Math.min(4, Math.floor((wave - 1) / 5));
       if (tier > this.currentTier && wave > 1) {
         this.currentTier = tier;
+        this.score += 5000;
+        this.updateHUD();
         triggerShake(this.effects, 8, 400);
         triggerFlash(this.effects, 0.5);
       }
@@ -324,7 +352,7 @@ class Game {
         2: ['Se acercan...', 'No te confíes...', 'Cuidado...'],
         3: ['¡Agárrate!', '¡Resiste!', '¡No cedas!'],
       };
-      const phaseColors: Record<number, string> = { 1: '#22d3ee', 2: '#facc15', 3: '#f43f5e' };
+      const phaseColors: Record<number, string> = { 1: '#22ff9e', 2: '#facc15', 3: '#f43f5e' };
 
       let txt: string;
       let color: string;
@@ -342,6 +370,11 @@ class Game {
         this.targetStarSpeedMult = 4.0;
       }
 
+      if (!isWaveEnd) {
+        this.score += 1000;
+        this.updateHUD();
+      }
+
       announce(this.effects.announcements, this.canvas.height, this.canvas.width, txt, {
         color,
         fontSize: 42,
@@ -350,6 +383,8 @@ class Game {
     };
     this.asteroidManager.onWaveComplete = () => {
       this.targetStarSpeedMult = 4.0;
+      this.score += 3000;
+      this.updateHUD();
     };
     this.asteroidManager.onBossWave = (wave: number) => {
       if (this.bossManager) {
@@ -370,7 +405,7 @@ class Game {
         const save = JSON.parse(raw);
         this.score = save.score;
         this.asteroidManager.jumpToWave(save.wave);
-        this.powerUpManager.lastSpawnScore = save.lastSpawnScore ?? save.score;
+        this.powerUpManager.killsSinceLastSpawn = save.killsSinceLastSpawn ?? 0;
         this.currentTier = Math.min(4, Math.floor((save.wave - 1) / 5));
       }
     } catch {
@@ -443,6 +478,8 @@ class Game {
       const tier = Math.min(4, Math.floor((wave - 1) / 5));
       if (tier > this.currentTier && wave > 1) {
         this.currentTier = tier;
+        this.score += 5000;
+        this.updateHUD();
         triggerShake(this.effects, 8, 400);
         triggerFlash(this.effects, 0.5);
       }
@@ -456,7 +493,7 @@ class Game {
         2: ['Se acercan...', 'No te confíes...', 'Cuidado...'],
         3: ['¡Agárrate!', '¡Resiste!', '¡No cedas!'],
       };
-      const phaseColors: Record<number, string> = { 1: '#22d3ee', 2: '#facc15', 3: '#f43f5e' };
+      const phaseColors: Record<number, string> = { 1: '#22ff9e', 2: '#facc15', 3: '#f43f5e' };
 
       let txt: string;
       let color: string;
@@ -474,6 +511,11 @@ class Game {
         this.targetStarSpeedMult = 4.0;
       }
 
+      if (!isWaveEnd) {
+        this.score += 1000;
+        this.updateHUD();
+      }
+
       announce(this.effects.announcements, this.canvas.height, this.canvas.width, txt, {
         color,
         fontSize: 42,
@@ -482,6 +524,8 @@ class Game {
     };
     this.asteroidManager.onWaveComplete = () => {
       this.targetStarSpeedMult = 4.0;
+      this.score += 3000;
+      this.updateHUD();
     };
     this.asteroidManager.onBossWave = (wave: number) => {
       if (this.bossManager) {
@@ -582,7 +626,6 @@ class Game {
     this.score += Math.floor(result * mult);
     if (result > 0) this.updateHUD();
 
-    this.powerUpManager.trySpawnPowerUp(this.score);
     updateExplosions(this.effects.explosions, dt);
     this.updatePowerUpIndicator();
     updatePowerUpIconStyles(this.powerUpIcons, this.powerUpManager.activePowerUps, Date.now());

@@ -434,16 +434,13 @@ export class AsteroidManager {
   }
 
   private startNextPhaseOrWave(): void {
-    if (this.currentPhase === 0) {
-      this.currentWave++;
-      this.currentPhase = 1;
-    } else {
-      this.currentPhase++;
-    }
-
+    this.currentPhase++;
     if (this.currentPhase > 3) {
       this.currentPhase = 1;
       this.currentWave++;
+    }
+    if (this.currentWave === 0) {
+      this.currentWave = 1;
     }
 
     if (this.currentPhase === 3 && this.currentWave % 5 === 0) {

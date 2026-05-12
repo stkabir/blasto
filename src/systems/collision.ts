@@ -65,7 +65,8 @@ export function checkAllCollisions(
     addFloatingText(effects.floatingTexts, asteroid.x, asteroid.y - asteroid.radius, `+${PLAYER_CONFIG.bulletDamage}`);
 
       if (destroyed) {
-        scoreIncrement += asteroid.type.hp;
+        scoreIncrement += asteroid.type.hp * 2;
+        powerUpManager.onAsteroidKilled();
         soundManager.play('explode');
         const shakeIntensity = asteroid.type.level <= 2 ? 4 : asteroid.type.level <= 3 ? 6 : 10;
       triggerShake(effects, shakeIntensity, 100);

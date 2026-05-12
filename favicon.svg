@@ -1,13 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<svg viewBox="0 0 32 32" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="1.5" result="blur" />
+    <linearGradient id="favGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+    <filter id="favGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1" result="blur"/>
       <feMerge>
-        <feMergeNode in="blur" />
-        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
   </defs>
-  <rect width="32" height="32" fill="#0b1017" />
-  <polygon points="16,0 0,32 32,32" fill="#16a34a" filter="url(#glow)" stroke="#22c55e" stroke-width="0.5" />
+  <rect width="32" height="32" fill="#07120c"/>
+  <polygon points="16,3 3,27 29,27" fill="url(#favGrad)" stroke="#22ff9e" stroke-width="0.5" stroke-opacity="0.8" filter="url(#favGlow)"/>
+  <circle cx="16" cy="18" r="3" fill="#22ff9e" opacity="0.5"/>
 </svg>
