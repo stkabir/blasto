@@ -338,10 +338,12 @@ export class AsteroidManager {
 
   currentWave: number = 0;
   currentPhase: number = 0;
+  private targetPhase: number = 1;
   phaseTimer: number = 0;
   waveSystemActive: boolean = false;
   warmupActive: boolean = false;
   private waitingForBoss: boolean = false;
+  private spawnGeneration: number = 0;
 
   onPhaseStart: ((wave: number, phase: number) => void) | null = null;
   onWaveComplete: ((wave: number) => void) | null = null;
@@ -369,17 +371,19 @@ export class AsteroidManager {
     if (this.currentPhase === 0) {
       this.phaseTimer -= dt * 1000;
       if (this.phaseTimer <= 0) {
-        this.startNextPhaseOrWave();
+        this.startPhase(this.targetPhase);
       }
       return;
     }
 
     if (this.asteroids.length === 0) {
       if (this.currentPhase < 3) {
+        this.targetPhase = this.currentPhase + 1;
         this.phaseTimer = PHASE_PAUSE;
         this.currentPhase = 0;
         if (this.onPauseStart) this.onPauseStart(false, PHASE_PAUSE, this.currentWave);
       } else {
+        this.targetPhase = 1;
         const waveCompleted = this.currentWave;
         this.phaseTimer = WAVE_PAUSE;
         this.currentPhase = 0;
@@ -393,16 +397,18 @@ export class AsteroidManager {
   startWaveSystem(): void {
     this.currentWave = 0;
     this.currentPhase = 0;
+    this.targetPhase = 1;
     this.phaseTimer = 0;
     this.waveSystemActive = true;
     this.warmupActive = false;
     this.waitingForBoss = false;
-    this.startNextPhaseOrWave();
+    this.startPhase(1);
   }
 
   jumpToWave(wave: number): void {
     this.currentWave = wave;
     this.currentPhase = 0;
+    this.targetPhase = 1;
     this.phaseTimer = 0;
     this.waveSystemActive = true;
     this.warmupActive = false;
@@ -425,6 +431,7 @@ export class AsteroidManager {
   notifyBossDefeated(): void {
     if (!this.waitingForBoss) return;
     this.waitingForBoss = false;
+    this.targetPhase = 1;
     const waveCompleted = this.currentWave;
     this.phaseTimer = WAVE_PAUSE;
     this.currentPhase = 0;
@@ -433,27 +440,23 @@ export class AsteroidManager {
     if (this.onWaveComplete) this.onWaveComplete(this.currentWave);
   }
 
-  private startNextPhaseOrWave(): void {
-    this.currentPhase++;
-    if (this.currentPhase > 3) {
-      this.currentPhase = 1;
-      this.currentWave++;
-    }
+  private startPhase(phase: number): void {
+    this.currentPhase = phase;
     if (this.currentWave === 0) {
       this.currentWave = 1;
     }
 
-    if (this.currentPhase === 3 && this.currentWave % 5 === 0) {
+    if (phase === 3 && this.currentWave % 5 === 0) {
       this.waitingForBoss = true;
       if (this.onBossWave) this.onBossWave(this.currentWave);
       return;
     }
 
-    const types = this.getPhaseSpawns(this.currentPhase);
+    const types = this.getPhaseSpawns(phase);
     this.spawnTypes(types);
 
     if (this.onPhaseStart) {
-      this.onPhaseStart(this.currentWave, this.currentPhase);
+      this.onPhaseStart(this.currentWave, phase);
     }
   }
 
@@ -475,10 +478,11 @@ export class AsteroidManager {
 
   private spawnTypes(types: AsteroidTypeKey[]): void {
     const delay = Math.max(200, 600 - this.currentWave * 10);
+    const gen = ++this.spawnGeneration;
 
     types.forEach((type, i) => {
       setTimeout(() => {
-        if (!this.waveSystemActive) return;
+        if (!this.waveSystemActive || gen !== this.spawnGeneration) return;
         const x = 40 + Math.random() * (window.innerWidth - 80);
         const y = -30 - Math.random() * 40;
         const a = new Asteroid(x, y, type);
@@ -523,9 +527,11 @@ export class AsteroidManager {
     this.asteroids = [];
     this.currentWave = 0;
     this.currentPhase = 0;
+    this.targetPhase = 1;
     this.phaseTimer = 0;
     this.waveSystemActive = false;
     this.warmupActive = false;
     this.waitingForBoss = false;
+    this.spawnGeneration = 0;
   }
 }
