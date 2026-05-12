@@ -1,57 +1,144 @@
+const SPLASH_DEFS = `
+  <defs>
+    <linearGradient id="lgTopS" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5cffb8"/>
+      <stop offset="55%" stop-color="#22ff9e"/>
+      <stop offset="100%" stop-color="#0ea968"/>
+    </linearGradient>
+    <linearGradient id="lgBLS" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#22ff9e"/>
+      <stop offset="55%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="lgBRS" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22ff9e"/>
+      <stop offset="55%" stop-color="#5b21b6"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+    <linearGradient id="lgShineS" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.6)"/>
+      <stop offset="55%" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+    <filter id="lgGlowS" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="1.6" result="b1"/>
+      <feColorMatrix in="b1" type="matrix" values="
+        0 0 0 0 0.13
+        0 0 0 0 1
+        0 0 0 0 0.62
+        0 0 0 1.3 0" result="g1"/>
+      <feGaussianBlur stdDeviation="4" in="SourceGraphic" result="b2"/>
+      <feColorMatrix in="b2" type="matrix" values="
+        0 0 0 0 0.66
+        0 0 0 0 0.33
+        0 0 0 0 0.97
+        0 0 0 0.75 0" result="g2"/>
+      <feMerge>
+        <feMergeNode in="g2"/>
+        <feMergeNode in="g1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>`;
+
+const CYAN_DEFS = `
+  <defs>
+    <linearGradient id="lgTopC" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a5f3fc"/>
+      <stop offset="55%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#0e7490"/>
+    </linearGradient>
+    <linearGradient id="lgBLC" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#67e8f9"/>
+      <stop offset="55%" stop-color="#0891b2"/>
+      <stop offset="100%" stop-color="#155e75"/>
+    </linearGradient>
+    <linearGradient id="lgBRC" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#67e8f9"/>
+      <stop offset="55%" stop-color="#0e7490"/>
+      <stop offset="100%" stop-color="#155e75"/>
+    </linearGradient>
+    <linearGradient id="lgShineC" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.6)"/>
+      <stop offset="55%" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+    <filter id="lgGlowC" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.2" result="b1"/>
+      <feColorMatrix in="b1" type="matrix" values="
+        0 0 0 0 0.13
+        0 0 0 0 0.83
+        0 0 0 0 0.93
+        0 0 0 1.3 0" result="g1"/>
+      <feMerge>
+        <feMergeNode in="g1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>`;
+
+function aMarkBody(suffix: string, stroke: string, thrust: [string, string, string], crossbar: boolean): string {
+  const cb = crossbar
+    ? `<line x1="33" y1="63" x2="67" y2="63" stroke="${stroke}" stroke-width="1.8" stroke-linecap="square" opacity="0.92"/>`
+    : '';
+  return `
+    <g filter="url(#lgGlow${suffix})">
+      <polygon points="50,4 50,63 33,63 6,78" fill="url(#lgBL${suffix})" stroke="${stroke}" stroke-width="1.2" stroke-linejoin="miter"/>
+      <polygon points="50,4 50,63 67,63 94,78" fill="url(#lgBR${suffix})" stroke="${stroke}" stroke-width="1.2" stroke-linejoin="miter"/>
+      <polygon points="50,4 67,63 50,84 33,63" fill="url(#lgTop${suffix})" stroke="${stroke}" stroke-width="1.2" stroke-linejoin="miter"/>
+      <polygon points="50,9 43,40 57,40" fill="url(#lgShine${suffix})" opacity="0.6"/>
+      <circle cx="50" cy="34" r="5.2" fill="${stroke}" opacity="0.22"/>
+      <circle cx="50" cy="34" r="2.6" fill="#f0fff5" opacity="0.95"/>
+      ${cb}
+      <polygon points="50,84 46,90 54,90" fill="${thrust[0]}" opacity="0.85"/>
+      <polygon points="50,90 47,94.5 53,94.5" fill="${thrust[1]}" opacity="0.55"/>
+      <polygon points="50,94.5 48.5,97.8 51.5,97.8" fill="${thrust[2]}" opacity="0.65"/>
+    </g>`;
+}
+
+export function getSplashLogoSVG(size: number = 100): string {
+  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-label="Blasto">${SPLASH_DEFS}${aMarkBody('S', '#22ff9e', ['#22ff9e', '#7cf2c4', '#a855f7'], true)}</svg>`;
+}
+
 export function getLogoSVG(size: number = 100): string {
-  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#10b981"/>
-        <stop offset="100%" stop-color="#a855f7"/>
-      </linearGradient>
-      <linearGradient id="logoHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="rgba(255,255,255,0.35)"/>
-        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-      </linearGradient>
-      <radialGradient id="logoCore" cx="50%" cy="55%" r="30%">
-        <stop offset="0%" stop-color="#22ff9e"/>
-        <stop offset="100%" stop-color="#a855f7"/>
-      </radialGradient>
-      <filter id="logoGlow" x="-30%" y="-30%" width="160%" height="160%">
-        <feGaussianBlur stdDeviation="3.5" result="blur"/>
-        <feColorMatrix type="saturate" values="1.8" in="blur" result="saturated"/>
-        <feMerge>
-          <feMergeNode in="saturated"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-    </defs>
-    <polygon points="50,8 10,78 90,78" fill="url(#logoGrad)" stroke="#22ff9e" stroke-width="1.5" stroke-opacity="0.9" filter="url(#logoGlow)"/>
-    <polygon points="50,16 18,70 82,70" fill="url(#logoHighlight)" opacity="0.6"/>
-    <circle cx="50" cy="52" r="8" fill="url(#logoCore)" opacity="0.7"/>
-  </svg>`;
+  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-label="Blasto">${CYAN_DEFS}${aMarkBody('C', '#22d3ee', ['#a5f3fc', '#22d3ee', '#0e7490'], true)}</svg>`;
 }
 
 export function getFaviconSVG(): string {
-  return `<svg viewBox="0 0 32 32" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="favGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#10b981"/>
-        <stop offset="100%" stop-color="#a855f7"/>
-      </linearGradient>
-      <filter id="favGlow" x="-20%" y="-20%" width="140%" height="140%">
-        <feGaussianBlur stdDeviation="1" result="blur"/>
-        <feMerge>
-          <feMergeNode in="blur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-    </defs>
-    <rect width="32" height="32" fill="#07120c"/>
-    <polygon points="16,3 3,27 29,27" fill="url(#favGrad)" stroke="#22ff9e" stroke-width="0.5" stroke-opacity="0.8" filter="url(#favGlow)"/>
-    <circle cx="16" cy="18" r="3" fill="#22ff9e" opacity="0.5"/>
+  return `<svg viewBox="0 0 100 100" width="32" height="32" xmlns="http://www.w3.org/2000/svg" aria-label="Blasto">
+    <rect width="100" height="100" rx="18" fill="#0b1017"/>
+    ${CYAN_DEFS}
+    ${aMarkBody('C', '#22d3ee', ['#a5f3fc', '#22d3ee', '#0e7490'], true)}
+  </svg>`;
+}
+
+export function getSocialSVG(): string {
+  return `<svg viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg" aria-label="Blasto">
+    <rect width="1200" height="630" fill="#0b1017"/>
+    <g opacity="0.04">
+      <line x1="0" y1="0" x2="1200" y2="630" stroke="#22d3ee" stroke-width="1"/>
+      <line x1="200" y1="0" x2="1200" y2="430" stroke="#22d3ee" stroke-width="1"/>
+      <line x1="400" y1="0" x2="1200" y2="230" stroke="#22d3ee" stroke-width="1"/>
+      <line x1="600" y1="0" x2="1200" y2="30" stroke="#22d3ee" stroke-width="1"/>
+      <line x1="0" y1="200" x2="1000" y2="630" stroke="#22d3ee" stroke-width="1"/>
+      <line x1="0" y1="400" x2="800" y2="630" stroke="#22d3ee" stroke-width="1"/>
+      <line x1="0" y1="600" x2="600" y2="630" stroke="#22d3ee" stroke-width="1"/>
+    </g>
+    ${CYAN_DEFS}
+    <g transform="translate(600, 315) scale(3.8) translate(-50, -50)">
+      ${aMarkBody('C', '#22d3ee', ['#a5f3fc', '#22d3ee', '#0e7490'], true)}
+    </g>
   </svg>`;
 }
 
 export function getWordmarkSVG(): string {
+  const aMark = `<span class="logo-a-mark" aria-hidden="true">${getLogoSVG(88)}</span>`;
   return `<div class="logo-wordmark">
-    <span class="logo-icon">${getLogoSVG(48)}</span>
-    <h1 class="logo-title">BLASTO</h1>
+    <div class="logo-wordmark-row">
+      <span class="logo-letter">B</span>
+      <span class="logo-letter">L</span>
+      ${aMark}
+      <span class="logo-letter">S</span>
+      <span class="logo-letter">T</span>
+      <span class="logo-letter">O</span>
+    </div>
   </div>`;
 }

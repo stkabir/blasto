@@ -38,7 +38,7 @@ import {
   type CustomizationState,
 } from './ui/customization.js';
 import { createPowerUpIcon, updatePowerUpIconStyles } from './ui/powerup-indicator.js';
-import { getLogoSVG } from './ui/logo.js';
+import { getWordmarkSVG, getSplashLogoSVG } from './ui/logo.js';
 import type { GameState, GameInput, Rocket, ActivePowerUp } from './core/types.js';
 
 class Game {
@@ -163,7 +163,7 @@ class Game {
   initSplash(): void {
     const splash = document.getElementById('splash-screen');
     const splashLogo = document.getElementById('splash-logo');
-    if (splashLogo) splashLogo.innerHTML = getLogoSVG(120);
+    if (splashLogo) splashLogo.innerHTML = getSplashLogoSVG(120);
     if (splash) {
       setTimeout(() => {
         splash.classList.add('hidden');
@@ -174,12 +174,7 @@ class Game {
 
   initLogo(): void {
     const container = document.getElementById('logo-container');
-    if (container) {
-      container.innerHTML = `<div class="logo-wordmark">
-        <span class="logo-icon">${getLogoSVG(56)}</span>
-        <h1 class="logo-title">BLASTO</h1>
-      </div>`;
-    }
+    if (container) container.innerHTML = getWordmarkSVG();
   }
 
   togglePause(): void {
@@ -352,7 +347,7 @@ class Game {
         2: ['Se acercan...', 'No te confíes...', 'Cuidado...'],
         3: ['¡Agárrate!', '¡Resiste!', '¡No cedas!'],
       };
-      const phaseColors: Record<number, string> = { 1: '#22ff9e', 2: '#facc15', 3: '#f43f5e' };
+      const phaseColors: Record<number, string> = { 1: '#22d3ee', 2: '#facc15', 3: '#f43f5e' };
 
       let txt: string;
       let color: string;
@@ -493,7 +488,7 @@ class Game {
         2: ['Se acercan...', 'No te confíes...', 'Cuidado...'],
         3: ['¡Agárrate!', '¡Resiste!', '¡No cedas!'],
       };
-      const phaseColors: Record<number, string> = { 1: '#22ff9e', 2: '#facc15', 3: '#f43f5e' };
+      const phaseColors: Record<number, string> = { 1: '#22d3ee', 2: '#facc15', 3: '#f43f5e' };
 
       let txt: string;
       let color: string;

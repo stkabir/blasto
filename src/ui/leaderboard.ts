@@ -73,7 +73,7 @@ function renderLeaderboardRows(
     else if (i <= 99) row.classList.add('rank-top100');
     let shipHtml = '';
     if (showShip && entry.designId) {
-      const color = entry.color || '#22ff9e';
+      const color = entry.color || '#22d3ee';
       shipHtml = `<span class="lb-ship">${getDesignSVG(entry.designId, color)}</span>`;
     }
     const medals = ['🥇', '🥈', '🥉'];

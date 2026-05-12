@@ -156,7 +156,7 @@ export function setupInput(handlers: {
     const name = modalNameInput.value.trim();
     if (!name) {
       modalNameInput.style.borderBottomColor = '#ef4444';
-      setTimeout(() => { modalNameInput.style.borderBottomColor = '#22ff9e'; }, 1000);
+      setTimeout(() => { modalNameInput.style.borderBottomColor = '#22d3ee'; }, 1000);
       return;
     }
     localStorage.setItem('blasto_playerName', name);

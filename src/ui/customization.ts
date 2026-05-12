@@ -4,7 +4,7 @@ import { getDesignSVG } from '../core/utils.js';
 import { soundManager } from '../systems/audio.js';
 
 function getBulletStyleSVG(id: string, colorOverride: string): string {
-  const color = colorOverride || '#22ff9e';
+  const color = colorOverride || '#22d3ee';
   switch (id) {
     case 'glow':
       return `<svg viewBox="0 0 40 40">
@@ -277,7 +277,7 @@ function bgPreviewSVG(id: string): string {
     case 'deep':
       return `<svg viewBox="0 0 60 60" style="width:100%;height:100%"><defs><radialGradient id="p1" cx="0.3" cy="0.5"><stop offset="0%" stop-color="#fbbf24"/><stop offset="60%" stop-color="#7c2d12"/><stop offset="100%" stop-color="#000"/></radialGradient></defs><circle cx="20" cy="32" r="14" fill="url(#p1)"/><circle cx="45" cy="15" r="0.8" fill="white"/><circle cx="50" cy="48" r="1" fill="white"/></svg>`;
     case 'grid':
-      return `<svg viewBox="0 0 60 60" style="width:100%;height:100%"><g stroke="#22ff9e" stroke-opacity="0.45" stroke-width="0.5" fill="none"><path d="M0 15H60M0 30H60M0 45H60M15 0V60M30 0V60M45 0V60"/></g><line x1="0" y1="40" x2="60" y2="40" stroke="#e879f9" stroke-width="1"/></svg>`;
+      return `<svg viewBox="0 0 60 60" style="width:100%;height:100%"><g stroke="#22d3ee" stroke-opacity="0.45" stroke-width="0.5" fill="none"><path d="M0 15H60M0 30H60M0 45H60M15 0V60M30 0V60M45 0V60"/></g><line x1="0" y1="40" x2="60" y2="40" stroke="#e879f9" stroke-width="1"/></svg>`;
     case 'aurora':
       return `<svg viewBox="0 0 60 60" style="width:100%;height:100%"><defs><linearGradient id="a1" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.6"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient><linearGradient id="a2" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#a78bfa" stop-opacity="0.5"/><stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/></linearGradient></defs><path d="M0 25 Q15 15 30 22 T60 20 L60 60 L0 60Z" fill="url(#a1)"/><path d="M0 35 Q15 28 30 32 T60 30 L60 60 L0 60Z" fill="url(#a2)"/></svg>`;
     case 'crimson':
