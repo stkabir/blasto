@@ -6,3 +6,5 @@ www/
 .claude/
 .agents/
 blasto-promo/
+android/app/blasto-release.jks
+android/app/release-signing.properties
