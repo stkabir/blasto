@@ -258,13 +258,174 @@ export function setupInput(handlers: {
     });
   });
 
+  let startFocusIdx = 0;
+  let pauseFocusIdx = -1;
+  let prevInputState: GameState = handlers.getState();
+
+  function clearAllFocus(): void {
+    document.querySelectorAll('.kb-focused').forEach(el => el.classList.remove('kb-focused'));
+  }
+
+  function getStartButtons(): HTMLElement[] {
+    const btns: HTMLElement[] = [];
+    if (!resumeBtn.classList.contains('hidden')) btns.push(resumeBtn);
+    btns.push(startBtn);
+    if (designToggle) btns.push(designToggle);
+    btns.push(howToPlayBtn);
+    btns.push(leaderboardBtn);
+    return btns;
+  }
+
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
-      const state = handlers.getState();
-      if (state === 'playing' || state === 'paused') handlers.onTogglePause();
+    const state = handlers.getState();
+
+    if (state !== prevInputState) {
+      clearAllFocus();
+      if (state === 'start') {
+        startFocusIdx = 0;
+        const btns = getStartButtons();
+        btns[0]?.classList.add('kb-focused');
+      }
+      if (state === 'paused') {
+        pauseFocusIdx = -1;
+      }
+      prevInputState = state;
     }
+
     if (e.key === 'ArrowLeft') keys.left = true;
     if (e.key === 'ArrowRight') keys.right = true;
+
+    if (e.key === 'Escape') {
+      if (state === 'instructions') { handlers.onHideInstructions(); return; }
+      if (state === 'leaderboard') { handlers.onHideLeaderboard(); return; }
+      if (state === 'customize') { handlers.onHideCustomize(); return; }
+      if (state === 'paused' && pauseFocusIdx >= 0) {
+        pauseFocusIdx = -1;
+        clearAllFocus();
+        return;
+      }
+    }
+    if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+      if (state === 'playing' || state === 'paused') { handlers.onTogglePause(); return; }
+    }
+
+    if (state === 'start') {
+      if (!nameModal.classList.contains('hidden')) return;
+      const btns = getStartButtons();
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (btns.length === 0) return;
+        btns[startFocusIdx]?.classList.remove('kb-focused');
+        if (e.key === 'ArrowUp') {
+          startFocusIdx = (startFocusIdx - 1 + btns.length) % btns.length;
+        } else {
+          startFocusIdx = (startFocusIdx + 1) % btns.length;
+        }
+        btns[startFocusIdx].classList.add('kb-focused');
+        return;
+      }
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (document.activeElement?.tagName === 'INPUT') return;
+        if (startFocusIdx >= 0 && startFocusIdx < btns.length) {
+          btns[startFocusIdx].click();
+        }
+        return;
+      }
+      return;
+    }
+
+    if (state === 'paused') {
+      const pauseBtns: HTMLElement[] = [pauseBackBtn, soundToggleBtn];
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        clearAllFocus();
+        if (pauseFocusIdx === -1) {
+          pauseFocusIdx = e.key === 'ArrowDown' ? 0 : pauseBtns.length - 1;
+        } else {
+          if (e.key === 'ArrowUp') {
+            pauseFocusIdx = (pauseFocusIdx - 1 + pauseBtns.length) % pauseBtns.length;
+          } else {
+            pauseFocusIdx = (pauseFocusIdx + 1) % pauseBtns.length;
+          }
+        }
+        pauseBtns[pauseFocusIdx].classList.add('kb-focused');
+        return;
+      }
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (pauseFocusIdx >= 0) {
+          pauseBtns[pauseFocusIdx].click();
+          pauseFocusIdx = -1;
+          clearAllFocus();
+        } else {
+          handlers.onTogglePause();
+        }
+        return;
+      }
+      if (e.key === 'b' || e.key === 'B') { handlers.onBackToMenu(); return; }
+      if (e.key === 's' || e.key === 'S') { soundToggleBtn.click(); return; }
+      return;
+    }
+
+    if (state === 'gameover') {
+      if (document.activeElement?.tagName === 'INPUT') return;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlers.onRestart(); return; }
+      if (e.key === 'b' || e.key === 'B') { handlers.onBackToMenu(); return; }
+      return;
+    }
+
+    if (state === 'instructions') {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'b' || e.key === 'B') {
+        e.preventDefault(); handlers.onHideInstructions(); return;
+      }
+      return;
+    }
+
+    if (state === 'leaderboard') {
+      if (e.key === 'b' || e.key === 'B') { handlers.onHideLeaderboard(); return; }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        const tabs = leaderboardScreen.querySelectorAll('.lb-tab');
+        const active = leaderboardScreen.querySelector('.lb-tab.active');
+        if (!active || tabs.length === 0) return;
+        const idx = Array.from(tabs).indexOf(active);
+        const next = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length;
+        (tabs[next] as HTMLElement).click();
+        soundManager.play('menu_click');
+        return;
+      }
+      return;
+    }
+
+    if (state === 'customize') {
+      if (e.key === 'b' || e.key === 'B') { handlers.onHideCustomize(); return; }
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const tabs = document.querySelectorAll('.customize-tab') as NodeListOf<HTMLElement>;
+        const active = document.querySelector('.customize-tab.active') as HTMLElement;
+        if (!active || tabs.length === 0) return;
+        const idx = Array.from(tabs).indexOf(active);
+        const next = e.shiftKey ? (idx - 1 + tabs.length) % tabs.length : (idx + 1) % tabs.length;
+        tabs[next].click();
+        soundManager.play('menu_click');
+        return;
+      }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        const section = document.querySelector('.customize-section.active');
+        if (!section) return;
+        const items = section.querySelectorAll('.customize-color-item, .customize-design-item, .customize-bullet-item, .customize-bg-item');
+        if (items.length === 0) return;
+        const selected = section.querySelector('.selected');
+        const idx = selected ? Array.from(items).indexOf(selected) : 0;
+        const next = e.key === 'ArrowRight' ? (idx + 1) % items.length : (idx - 1 + items.length) % items.length;
+        (items[next] as HTMLElement).click();
+        soundManager.play('menu_click');
+        return;
+      }
+      return;
+    }
   });
 
   window.addEventListener('keyup', (e) => {

@@ -332,7 +332,7 @@ class Game {
       const tier = Math.min(4, Math.floor((wave - 1) / 5));
       if (tier > this.currentTier && wave > 1) {
         this.currentTier = tier;
-        this.score += 5000;
+        this.score += 10000;
         this.updateHUD();
         triggerShake(this.effects, 8, 400);
         triggerFlash(this.effects, 0.5);
@@ -366,7 +366,7 @@ class Game {
       }
 
       if (!isWaveEnd) {
-        this.score += 1000;
+        this.score += 3000;
         this.updateHUD();
       }
 
@@ -473,7 +473,7 @@ class Game {
       const tier = Math.min(4, Math.floor((wave - 1) / 5));
       if (tier > this.currentTier && wave > 1) {
         this.currentTier = tier;
-        this.score += 5000;
+        this.score += 10000;
         this.updateHUD();
         triggerShake(this.effects, 8, 400);
         triggerFlash(this.effects, 0.5);
@@ -507,7 +507,7 @@ class Game {
       }
 
       if (!isWaveEnd) {
-        this.score += 1000;
+        this.score += 3000;
         this.updateHUD();
       }
 

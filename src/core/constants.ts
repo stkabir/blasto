@@ -24,7 +24,7 @@ export const SPLIT_MAP: Record<number, AsteroidTypeKey | null> = {
 export const PLAYER_CONFIG = {
   speed: 350,
   radius: 18,
-  fireRate: 33,
+  fireRate: 25,
   bulletSpeed: 500,
   bulletDamage: 1,
 };
