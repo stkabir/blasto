@@ -1,45 +1,3 @@
-const SPLASH_DEFS = `
-  <defs>
-    <linearGradient id="lgTopS" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#5cffb8"/>
-      <stop offset="55%" stop-color="#22ff9e"/>
-      <stop offset="100%" stop-color="#0ea968"/>
-    </linearGradient>
-    <linearGradient id="lgBLS" x1="100%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#22ff9e"/>
-      <stop offset="55%" stop-color="#10b981"/>
-      <stop offset="100%" stop-color="#7c3aed"/>
-    </linearGradient>
-    <linearGradient id="lgBRS" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#22ff9e"/>
-      <stop offset="55%" stop-color="#5b21b6"/>
-      <stop offset="100%" stop-color="#a855f7"/>
-    </linearGradient>
-    <linearGradient id="lgShineS" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="rgba(255,255,255,0.6)"/>
-      <stop offset="55%" stop-color="rgba(255,255,255,0)"/>
-    </linearGradient>
-    <filter id="lgGlowS" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="1.6" result="b1"/>
-      <feColorMatrix in="b1" type="matrix" values="
-        0 0 0 0 0.13
-        0 0 0 0 1
-        0 0 0 0 0.62
-        0 0 0 1.3 0" result="g1"/>
-      <feGaussianBlur stdDeviation="4" in="SourceGraphic" result="b2"/>
-      <feColorMatrix in="b2" type="matrix" values="
-        0 0 0 0 0.66
-        0 0 0 0 0.33
-        0 0 0 0 0.97
-        0 0 0 0.75 0" result="g2"/>
-      <feMerge>
-        <feMergeNode in="g2"/>
-        <feMergeNode in="g1"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-  </defs>`;
-
 const CYAN_DEFS = `
   <defs>
     <linearGradient id="lgTopC" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -94,12 +52,12 @@ function aMarkBody(suffix: string, stroke: string, thrust: [string, string, stri
     </g>`;
 }
 
-export function getSplashLogoSVG(size: number = 100): string {
-  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-label="Blasto">${SPLASH_DEFS}${aMarkBody('S', '#22ff9e', ['#22ff9e', '#7cf2c4', '#a855f7'], true)}</svg>`;
-}
-
 export function getLogoSVG(size: number = 100): string {
   return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-label="Blasto">${CYAN_DEFS}${aMarkBody('C', '#22d3ee', ['#a5f3fc', '#22d3ee', '#0e7490'], true)}</svg>`;
+}
+
+export function getSplashLogoSVG(size: number = 100): string {
+  return getLogoSVG(size);
 }
 
 export function getFaviconSVG(): string {
