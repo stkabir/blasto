@@ -688,7 +688,14 @@ body {
     color: rgba(255, 255, 255, 0.25);
     text-decoration: none;
     letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
     transition: opacity 0.2s;
+}
+
+#download-apk svg {
+    opacity: 0.5;
 }
 
 #download-apk:hover {
