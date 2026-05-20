@@ -40,6 +40,9 @@ export const BACKGROUNDS: BackgroundTheme[] = [
   { id: 'grid',      name: 'Cyber',      base: '#04060c' },
   { id: 'aurora',    name: 'Aurora',     base: '#031018' },
   { id: 'crimson',   name: 'Carmesí',    base: '#160506' },
+  { id: 'inferno',   name: 'Infierno',   base: '#1a0502' },
+  { id: 'abyss',     name: 'Abismo',     base: '#020513' },
+  { id: 'paradise',  name: 'Paraíso',    base: '#021a0f' },
 ];
 
 const NEBULA_COLORS_BY_THEME: Record<string, string[]> = {
@@ -47,6 +50,9 @@ const NEBULA_COLORS_BY_THEME: Record<string, string[]> = {
   deep:    ['#1e3a8a', '#312e81', '#831843'],
   aurora:  ['#10b981', '#22ff9e', '#a78bfa'],
   crimson: ['#dc2626', '#9a3412', '#f59e0b'],
+  inferno: ['#f97316', '#dc2626', '#fbbf24'],
+  abyss:   ['#1e3a8a', '#6b21a8', '#0ea5e9'],
+  paradise: ['#10b981', '#34d399', '#fbbf24'],
 };
 
 export function createBackgroundState(): BackgroundState {
@@ -172,12 +178,30 @@ export function drawBackground(ctx: CanvasRenderingContext2D, state: BackgroundS
     ctx.fillRect(0, 0, w, h);
   }
 
-  if (themeId === 'nebula' || themeId === 'deep' || themeId === 'aurora' || themeId === 'crimson') {
+  if (themeId === 'nebula' || themeId === 'deep' || themeId === 'aurora' || themeId === 'crimson' || themeId === 'inferno' || themeId === 'abyss' || themeId === 'paradise') {
     drawNebulas(ctx, state);
   }
 
-  if (themeId === 'deep') {
+  if (themeId === 'deep' || themeId === 'abyss') {
     drawDistantBodies(ctx, state);
+  }
+
+  if (themeId === 'inferno') {
+    const infernoGrad = ctx.createRadialGradient(w / 2, h * 0.35, 0, w / 2, h * 0.6, Math.max(w, h));
+    infernoGrad.addColorStop(0, '#7c2d12');
+    infernoGrad.addColorStop(0.5, '#3b0a02');
+    infernoGrad.addColorStop(1, '#0d0200');
+    ctx.fillStyle = infernoGrad;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  if (themeId === 'paradise') {
+    const paradiseGrad = ctx.createLinearGradient(0, 0, 0, h);
+    paradiseGrad.addColorStop(0, '#042e1a');
+    paradiseGrad.addColorStop(0.5, '#065f36');
+    paradiseGrad.addColorStop(1, '#021408');
+    ctx.fillStyle = paradiseGrad;
+    ctx.fillRect(0, 0, w, h);
   }
 
   if (themeId === 'grid') {
@@ -188,7 +212,7 @@ export function drawBackground(ctx: CanvasRenderingContext2D, state: BackgroundS
 }
 
 function drawStars(ctx: CanvasRenderingContext2D, stars: Star[], themeId: string): void {
-  const tint = themeId === 'crimson' ? '#fecaca' : themeId === 'aurora' ? '#bbf7d0' : '#ffffff';
+  const tint = themeId === 'crimson' ? '#fecaca' : themeId === 'aurora' ? '#bbf7d0' : themeId === 'inferno' ? '#fed7aa' : themeId === 'abyss' ? '#bfdbfe' : themeId === 'paradise' ? '#a7f3d0' : '#ffffff';
   ctx.fillStyle = tint;
   for (const star of stars) {
     ctx.globalAlpha = star.alpha;

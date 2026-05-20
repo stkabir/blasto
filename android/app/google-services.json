@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "500555592297",
+    "project_id": "blasto-b28e5",
+    "storage_bucket": "blasto-b28e5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:500555592297:android:658ea975c56bbfaf1728f8",
+        "android_client_info": {
+          "package_name": "pro.blasto.game"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoIBtrl7eS_qXyS6kSOzFZ_PTFhUx1yMM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

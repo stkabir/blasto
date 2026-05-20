@@ -284,6 +284,57 @@ export class Player {
         break;
       }
 
+      case 'vortex': {
+        const t = Date.now() / 100;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 16;
+        for (let s = 0; s < 3; s++) {
+          const angle = t * 3 + (s / 3) * Math.PI * 2;
+          const dist = 8 + Math.sin(t * 6 + s) * 4;
+          ctx.globalAlpha = 0.55;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(b.x + Math.cos(angle) * dist, b.y + Math.sin(angle) * dist, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 0.3;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 9, t * 2, t * 2 + Math.PI * 1.8);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
+
+      case 'plasma': {
+        const t = Date.now() / 180;
+        const pSize = 1 + Math.sin(t * 4) * 0.3;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 28;
+        const pg = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.radius * 1.8);
+        pg.addColorStop(0, '#ffffff');
+        pg.addColorStop(0.3, color);
+        pg.addColorStop(0.7, color);
+        pg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = pg;
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius * 1.8 * pSize, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
+
       case 'dual':
       default: {
         ctx.shadowColor = color;

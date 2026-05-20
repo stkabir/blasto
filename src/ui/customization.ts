@@ -2,6 +2,7 @@ import { PLAYER_DESIGNS, SHIP_COLORS, BULLET_STYLES } from '../core/constants.js
 import { BACKGROUNDS } from '../background.js';
 import { getDesignSVG } from '../core/utils.js';
 import { soundManager } from '../systems/audio.js';
+import { isPurchased, PREMIUM_DESIGNS, PREMIUM_BULLETS, PREMIUM_BACKGROUNDS } from '../monetization/unlocks.js';
 
 function getBulletStyleSVG(id: string, colorOverride: string): string {
   const color = colorOverride || '#22d3ee';
@@ -52,20 +53,24 @@ export interface CustomizationState {
 }
 
 export function selectBackground(state: CustomizationState, id: string): void {
+  const premiumIds = PREMIUM_BACKGROUNDS.map(b => b.id);
+  if (premiumIds.includes(id) && !isPurchased('background', id)) return;
   state.background = id;
   localStorage.setItem('blasto_background', id);
   const items = document.querySelectorAll('.customize-bg-item');
   items.forEach(item => {
-    item.classList.toggle('selected', (item as HTMLElement).dataset.id === id);
+    item.classList.toggle('selected', (item as HTMLElement).dataset.id === id && !item.classList.contains('locked'));
   });
 }
 
 export function selectDesign(state: CustomizationState, id: string): void {
+  const premiumIds = PREMIUM_DESIGNS.map(d => d.id);
+  if (premiumIds.includes(id) && !isPurchased('design', id)) return;
   state.playerDesign = id;
   localStorage.setItem('blasto_playerDesign', id);
   const items = document.querySelectorAll('.customize-design-item');
   items.forEach(item => {
-    item.classList.toggle('selected', (item as HTMLElement).dataset.id === id);
+    item.classList.toggle('selected', (item as HTMLElement).dataset.id === id && !item.classList.contains('locked'));
   });
   updateAllPreviews(state.playerColor);
 }
@@ -81,11 +86,13 @@ export function selectColor(state: CustomizationState, color: string): void {
 }
 
 export function selectBulletStyle(state: CustomizationState, id: string): void {
+  const premiumIds = PREMIUM_BULLETS.map(b => b.id);
+  if (premiumIds.includes(id) && !isPurchased('bullet', id)) return;
   state.bulletStyle = id;
   localStorage.setItem('blasto_bulletStyle', id);
   const items = document.querySelectorAll('.customize-bullet-item');
   items.forEach(item => {
-    item.classList.toggle('selected', (item as HTMLElement).dataset.id === id);
+    item.classList.toggle('selected', (item as HTMLElement).dataset.id === id && !item.classList.contains('locked'));
   });
 }
 
@@ -184,21 +191,40 @@ export function createCustomizeList(
   const shipsGrid = document.createElement('div');
   shipsGrid.className = 'customize-grid';
   const designs = Object.values(PLAYER_DESIGNS);
+  const premiumDesigns = PREMIUM_DESIGNS.map(d => d.id);
   designs.forEach(design => {
     const item = document.createElement('div');
     item.className = 'customize-design-item';
     item.dataset.id = design.id;
+
+    const isLocked = premiumDesigns.includes(design.id) && !isPurchased('design', design.id);
+    if (isLocked) {
+      item.classList.add('locked');
+    }
 
     const preview = document.createElement('div');
     preview.className = 'customize-design-preview';
     preview.innerHTML = getDesignSVG(design.id, state.playerColor);
     item.appendChild(preview);
 
-    if (design.id === state.playerDesign) {
+    if (design.id === state.playerDesign && !isLocked) {
       item.classList.add('selected');
     }
 
-    item.addEventListener('click', () => onSelectDesign(design.id));
+    if (isLocked) {
+      const lockBadge = document.createElement('span');
+      lockBadge.className = 'lock-badge';
+      lockBadge.textContent = '🔒';
+      item.appendChild(lockBadge);
+    }
+
+    item.addEventListener('click', () => {
+      if (isLocked) {
+        soundManager.play('menu_click');
+        return;
+      }
+      onSelectDesign(design.id);
+    });
     shipsGrid.appendChild(item);
   });
   designSection.appendChild(shipsGrid);
@@ -211,21 +237,40 @@ export function createCustomizeList(
   const bulletsGrid = document.createElement('div');
   bulletsGrid.className = 'customize-grid';
   const bulletStyles = Object.values(BULLET_STYLES);
+  const premiumBullets = PREMIUM_BULLETS.map(b => b.id);
   bulletStyles.forEach(style => {
     const item = document.createElement('div');
     item.className = 'customize-bullet-item';
     item.dataset.id = style.id;
+
+    const isLocked = premiumBullets.includes(style.id) && !isPurchased('bullet', style.id);
+    if (isLocked) {
+      item.classList.add('locked');
+    }
 
     const preview = document.createElement('div');
     preview.className = 'customize-bullet-preview';
     preview.innerHTML = getBulletStyleSVG(style.id, state.playerColor);
     item.appendChild(preview);
 
-    if (style.id === state.bulletStyle) {
+    if (style.id === state.bulletStyle && !isLocked) {
       item.classList.add('selected');
     }
 
-    item.addEventListener('click', () => onSelectBulletStyle(style.id));
+    if (isLocked) {
+      const lockBadge = document.createElement('span');
+      lockBadge.className = 'lock-badge';
+      lockBadge.textContent = '🔒';
+      item.appendChild(lockBadge);
+    }
+
+    item.addEventListener('click', () => {
+      if (isLocked) {
+        soundManager.play('menu_click');
+        return;
+      }
+      onSelectBulletStyle(style.id);
+    });
     bulletsGrid.appendChild(item);
   });
   bulletSection.appendChild(bulletsGrid);
@@ -237,10 +282,16 @@ export function createCustomizeList(
   bgSection.dataset.section = 'bg';
   const bgGrid = document.createElement('div');
   bgGrid.className = 'customize-grid';
+  const premiumBgs = PREMIUM_BACKGROUNDS.map(bg => bg.id);
   BACKGROUNDS.forEach(bg => {
     const item = document.createElement('div');
     item.className = 'customize-bg-item customize-design-item';
     item.dataset.id = bg.id;
+
+    const isLocked = premiumBgs.includes(bg.id) && !isPurchased('background', bg.id);
+    if (isLocked) {
+      item.classList.add('locked');
+    }
 
     const preview = document.createElement('div');
     preview.className = 'customize-bg-preview customize-design-preview';
@@ -259,8 +310,22 @@ export function createCustomizeList(
     label.textContent = bg.name;
     item.appendChild(label);
 
-    if (bg.id === state.background) item.classList.add('selected');
-    item.addEventListener('click', () => onSelectBackground && onSelectBackground(bg.id));
+    if (bg.id === state.background && !isLocked) item.classList.add('selected');
+
+    if (isLocked) {
+      const lockBadge = document.createElement('span');
+      lockBadge.className = 'lock-badge';
+      lockBadge.textContent = '🔒';
+      item.appendChild(lockBadge);
+    }
+
+    item.addEventListener('click', () => {
+      if (isLocked) {
+        soundManager.play('menu_click');
+        return;
+      }
+      onSelectBackground && onSelectBackground(bg.id);
+    });
     bgGrid.appendChild(item);
   });
   bgSection.appendChild(bgGrid);

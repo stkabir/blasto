@@ -40,6 +40,8 @@ import {
 import { createPowerUpIcon, updatePowerUpIconStyles } from './ui/powerup-indicator.js';
 import { getWordmarkSVG, getSplashLogoSVG } from './ui/logo.js';
 import type { GameState, GameInput, Rocket, ActivePowerUp } from './core/types.js';
+import { initAds, showRewardAd, showBanner, hideBanner, isNative } from './monetization/ads.js';
+import { addLives, consumeLife, getLivesBalance, hasRemoveAds, buyDesign, buyBullet, buyBackground, buyRemoveAds, buyMegaPack, isPurchased, PREMIUM_DESIGNS, PREMIUM_BULLETS, PREMIUM_BACKGROUNDS, IAP_PRODUCTS, type IAPProductId } from './monetization/unlocks.js';
 
 class Game {
   canvas: HTMLCanvasElement;
@@ -84,6 +86,12 @@ class Game {
   customization: CustomizationState;
   bossActive: boolean = false;
 
+  lives: number = 3;
+  reviveRequested: boolean = false;
+
+  shopScreen: HTMLElement;
+  shopList: HTMLElement;
+
   starSpeedMult: number = 1.0;
   targetStarSpeedMult: number = 1.0;
   currentTier: number = 0;
@@ -102,6 +110,8 @@ class Game {
     this.instructionsScreen = document.getElementById('instructions-screen')!;
     this.customizeScreen = document.getElementById('customize-screen')!;
     this.leaderboardScreen = document.getElementById('leaderboard-screen')!;
+    this.shopScreen = document.getElementById('shop-screen')!;
+    this.shopList = document.getElementById('shop-list')!;
     this.playerInfo = document.getElementById('player-info')!;
     this.playerNameDisplay = document.getElementById('player-name-display')!;
     this.finalScoreEl = document.getElementById('final-score')!;
@@ -137,6 +147,19 @@ class Game {
     this.initSplash();
     this.initLogo();
 
+    const reviveAdBtn = document.getElementById('revive-ad-btn');
+    if (reviveAdBtn) {
+      reviveAdBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.tryReviveWithAd();
+      });
+      reviveAdBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.tryReviveWithAd();
+      }, { passive: false });
+    }
+
     this.keys = setupInput({
       onTogglePause: () => this.togglePause(),
       onStartGame: () => this.startGame(),
@@ -148,9 +171,13 @@ class Game {
       onHideLeaderboard: () => this.hideLeaderboard(),
       onShowCustomize: () => this.showCustomize(),
       onHideCustomize: () => this.hideCustomize(),
+      onShowShop: () => this.showShop(),
+      onHideShop: () => this.hideShop(),
       onBackToMenu: () => this.backToMenu(),
       getState: () => this.state,
     });
+
+    initAds();
 
     requestAnimationFrame((t) => this.loop(t));
   }
@@ -244,6 +271,104 @@ class Game {
     this.state = 'start';
   }
 
+  showShop(): void {
+    this.state = 'shop';
+    this.startScreen.classList.add('hidden');
+    this.shopScreen.classList.remove('hidden');
+    this.renderShop();
+    hideBanner();
+  }
+
+  hideShop(): void {
+    this.shopScreen.classList.add('hidden');
+    this.startScreen.classList.remove('hidden');
+    this.state = 'start';
+    if (!hasRemoveAds()) showBanner();
+  }
+
+  renderShop(): void {
+    this.shopList.innerHTML = '';
+
+    const livesCount = getLivesBalance();
+    const livesLabel = document.createElement('div');
+    livesLabel.className = 'shop-lives-header';
+    livesLabel.innerHTML = `Vidas disponibles: <strong>${livesCount}</strong>`;
+    this.shopList.appendChild(livesLabel);
+
+    const iapItems: { id: IAPProductId; name: string; desc: string; price: number; icon: string }[] = [
+      { ...IAP_PRODUCTS.removeAds, icon: '🚫' },
+      { ...IAP_PRODUCTS.lives5, icon: '❤️' },
+      { ...IAP_PRODUCTS.lives20, icon: '💕' },
+      { ...IAP_PRODUCTS.designPack, icon: '🚀' },
+      { ...IAP_PRODUCTS.bulletPack, icon: '💥' },
+      { ...IAP_PRODUCTS.bgPack, icon: '🎨' },
+      { ...IAP_PRODUCTS.megaPack, icon: '⭐' },
+    ];
+
+    for (const item of iapItems) {
+      const card = document.createElement('div');
+      card.className = 'shop-item';
+      if (item.id === 'megaPack') card.classList.add('shop-item-featured');
+
+      let purchased = false;
+      if (item.id === 'removeAds') purchased = hasRemoveAds();
+      else if (item.id === 'designPack') purchased = PREMIUM_DESIGNS.every(d => isPurchased('design', d.id));
+      else if (item.id === 'bulletPack') purchased = PREMIUM_BULLETS.every(b => isPurchased('bullet', b.id));
+      else if (item.id === 'bgPack') purchased = PREMIUM_BACKGROUNDS.every(bg => isPurchased('background', bg.id));
+
+      card.innerHTML = `
+        <div class="shop-item-icon">${item.icon}</div>
+        <div class="shop-item-info">
+          <div class="shop-item-name">${item.name}</div>
+          <div class="shop-item-desc">${item.desc}</div>
+        </div>
+        <div class="shop-item-price">$${item.price.toFixed(2)}</div>
+      `;
+
+      if (purchased) {
+        card.classList.add('shop-item-owned');
+        const btn = document.createElement('div');
+        btn.className = 'shop-owned-badge';
+        btn.textContent = 'ADQUIRIDO';
+        card.appendChild(btn);
+      }
+
+      card.addEventListener('click', () => {
+        if (purchased) return;
+        this.purchaseItem(item.id);
+      });
+
+      this.shopList.appendChild(card);
+    }
+  }
+
+  purchaseItem(id: IAPProductId): void {
+    switch (id) {
+      case 'removeAds':
+        buyRemoveAds();
+        break;
+      case 'lives5':
+        addLives(5);
+        break;
+      case 'lives20':
+        addLives(20);
+        break;
+      case 'designPack':
+        for (const d of PREMIUM_DESIGNS) buyDesign(d.id);
+        break;
+      case 'bulletPack':
+        for (const b of PREMIUM_BULLETS) buyBullet(b.id);
+        break;
+      case 'bgPack':
+        for (const bg of PREMIUM_BACKGROUNDS) buyBackground(bg.id);
+        break;
+      case 'megaPack':
+        buyMegaPack();
+        break;
+    }
+    this.renderShop();
+  }
+
   backToMenu(): void {
     if (this.state === 'paused') {
       this.saveGameState();
@@ -257,6 +382,7 @@ class Game {
     if (this.powerUpManager) this.powerUpManager.activePowerUps = {};
     this.gameOverScreen.classList.add('hidden');
     this.pauseScreen.classList.add('hidden');
+    this.shopScreen.classList.add('hidden');
     this.playerInfo.classList.remove('paused');
     this.hud.classList.add('hidden');
     this.startScreen.classList.remove('hidden');
@@ -307,6 +433,7 @@ class Game {
     this.startScreen.classList.add('hidden');
     this.gameOverScreen.classList.add('hidden');
     this.hud.classList.remove('hidden');
+    this.lives = 3;
 
     this.effects = createEffectsState();
     this.combo = { count: 0, lastHitTime: 0 };
@@ -438,6 +565,7 @@ class Game {
     this.playerName = localStorage.getItem('blasto_playerName') || 'Player 1';
     localStorage.setItem('blasto_playerName', this.playerName);
     this.playerNameDisplay.textContent = this.playerName;
+    this.lives = 3;
 
     this.state = 'playing';
     this.score = 0;
@@ -608,7 +736,7 @@ class Game {
     );
 
     if (result === -1) {
-      this.gameOver();
+      this.playerDied();
       return;
     }
 
@@ -626,6 +754,20 @@ class Game {
     updatePowerUpIconStyles(this.powerUpIcons, this.powerUpManager.activePowerUps, Date.now());
 
     addTrailParticle(this.effects, this.player);
+  }
+
+  playerDied(): void {
+    const extraLife = consumeLife();
+    if (extraLife) {
+      if (this.player) {
+        this.player.invulnerableUntil = Date.now() + 4000;
+      }
+      triggerShake(this.effects, 6, 200);
+      announce(this.effects.announcements, this.canvas.height, this.canvas.width, '¡VIDA EXTRA!', { color: '#ef4444', fontSize: 48 });
+      return;
+    }
+
+    this.gameOver();
   }
 
   async gameOver(): Promise<void> {
@@ -661,6 +803,19 @@ class Game {
     this.gameOverScreen.style.transform = 'scale(0.9)';
     this.gameOverScreen.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
 
+    const reviveBtn = document.getElementById('revive-ad-btn') as HTMLElement;
+    const noAds = hasRemoveAds();
+    if (reviveBtn) {
+      reviveBtn.classList.remove('hidden');
+      if (noAds) {
+        reviveBtn.textContent = 'Continuar';
+        reviveBtn.classList.add('revive-no-ads');
+      } else {
+        reviveBtn.textContent = 'Ver anuncio para continuar';
+        reviveBtn.classList.remove('revive-no-ads');
+      }
+    }
+
     this.highEl.textContent = formatScore(this.high);
     this.playerInfo.classList.remove('paused');
     this.hud.classList.add('hidden');
@@ -689,6 +844,58 @@ class Game {
         this.gameOverScreen.style.transform = 'scale(1)';
       });
     });
+  }
+
+  tryReviveWithAd(): void {
+    const noAds = hasRemoveAds();
+    if (noAds) {
+      this.revivePlayer();
+      return;
+    }
+
+    const reviveBtn = document.getElementById('revive-ad-btn') as HTMLElement;
+    if (reviveBtn) {
+      reviveBtn.textContent = 'Cargando...';
+      reviveBtn.classList.add('hidden');
+    }
+
+    showRewardAd((result) => {
+      if (result.rewarded) {
+        this.revivePlayer();
+      } else {
+        if (reviveBtn) {
+          reviveBtn.textContent = 'Ver anuncio para continuar';
+          reviveBtn.classList.remove('hidden');
+        }
+      }
+    });
+  }
+
+  revivePlayer(): void {
+    this.state = 'playing';
+    this.gameOverScreen.classList.add('hidden');
+    this.hud.classList.remove('hidden');
+
+    if (this.player) {
+      this.player.reset(this.canvas.width / 2, this.canvas.height - 150);
+      this.player.setDesign(this.customization.playerDesign);
+      this.player.setColor(this.customization.playerColor);
+      this.player.setBulletStyle(this.customization.bulletStyle);
+      this.player.invulnerableUntil = Date.now() + 4000;
+    }
+
+    this.canvas.style.transform = 'scale(1.05)';
+    this.canvas.style.opacity = '0';
+    this.canvas.style.transition = 'transform 0.3s ease-out, opacity 0.2s ease-out';
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.canvas.style.transform = 'scale(1)';
+        this.canvas.style.opacity = '1';
+      });
+    });
+
+    this.updateHUD();
   }
 
   updateHUD(): void {

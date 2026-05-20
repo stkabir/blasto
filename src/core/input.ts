@@ -12,6 +12,8 @@ export function setupInput(handlers: {
   onHideLeaderboard: () => void;
   onShowCustomize: () => void;
   onHideCustomize: () => void;
+  onShowShop: () => void;
+  onHideShop: () => void;
   onBackToMenu: () => void;
   getState: () => GameState;
 }): GameInput {
@@ -247,6 +249,18 @@ export function setupInput(handlers: {
     customizeBackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlers.onHideCustomize(); }, { passive: false });
   }
 
+  const shopBtn = document.getElementById('shop-btn') as HTMLElement;
+  if (shopBtn) {
+    shopBtn.addEventListener('click', (e) => { e.stopPropagation(); soundManager.play('menu_click'); handlers.onShowShop(); });
+    shopBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlers.onShowShop(); }, { passive: false });
+  }
+
+  const shopBackBtn = document.getElementById('shop-back-btn') as HTMLElement;
+  if (shopBackBtn) {
+    shopBackBtn.addEventListener('click', (e) => { e.stopPropagation(); soundManager.play('menu_back'); handlers.onHideShop(); });
+    shopBackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlers.onHideShop(); }, { passive: false });
+  }
+
   leaderboardScreen.querySelectorAll('.lb-tab').forEach((tab) => {
     tab.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -299,6 +313,7 @@ export function setupInput(handlers: {
       if (state === 'instructions') { handlers.onHideInstructions(); return; }
       if (state === 'leaderboard') { handlers.onHideLeaderboard(); return; }
       if (state === 'customize') { handlers.onHideCustomize(); return; }
+      if (state === 'shop') { handlers.onHideShop(); return; }
       if (state === 'paused' && pauseFocusIdx >= 0) {
         pauseFocusIdx = -1;
         clearAllFocus();

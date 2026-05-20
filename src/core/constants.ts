@@ -224,6 +224,80 @@ function drawCrux(ctx: CanvasRenderingContext2D, r: number): void {
   cockpit(ctx, 0, 0, r * 0.22);
 }
 
+function drawPhoenix(ctx: CanvasRenderingContext2D, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(0, -r);
+  ctx.lineTo(r * 0.95, -r * 0.3);
+  ctx.lineTo(r * 0.7, r * 0.1);
+  ctx.lineTo(r * 0.45, r * 0.3);
+  ctx.lineTo(0, r * 0.5);
+  ctx.lineTo(-r * 0.45, r * 0.3);
+  ctx.lineTo(-r * 0.7, r * 0.1);
+  ctx.lineTo(-r * 0.95, -r * 0.3);
+  ctx.closePath();
+  fillStrokeShip(ctx, bodyFill(ctx, r));
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.85, r * 0.05);
+  ctx.lineTo(-r * 0.5, r * 0.35);
+  ctx.lineTo(r * 0.5, r * 0.35);
+  ctx.lineTo(r * 0.85, r * 0.05);
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = ctx.strokeStyle as string;
+  ctx.globalAlpha = 0.45;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = 2;
+  cockpit(ctx, 0, -r * 0.2, r * 0.23);
+}
+
+function drawViper(ctx: CanvasRenderingContext2D, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(0, -r);
+  ctx.lineTo(r * 0.55, -r * 0.5);
+  ctx.lineTo(r * 0.7, r * 0.15);
+  ctx.lineTo(r * 0.35, r * 0.7);
+  ctx.lineTo(0, r * 0.85);
+  ctx.lineTo(-r * 0.35, r * 0.7);
+  ctx.lineTo(-r * 0.7, r * 0.15);
+  ctx.lineTo(-r * 0.55, -r * 0.5);
+  ctx.closePath();
+  fillStrokeShip(ctx, bodyFill(ctx, r));
+  ctx.beginPath();
+  ctx.moveTo(0, -r * 0.3);
+  ctx.lineTo(r * 0.25, r * 0.1);
+  ctx.lineTo(-r * 0.25, r * 0.1);
+  ctx.closePath();
+  ctx.fillStyle = ctx.strokeStyle as string;
+  ctx.globalAlpha = 0.35;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  cockpit(ctx, 0, -r * 0.15, r * 0.18);
+}
+
+function drawFalcon(ctx: CanvasRenderingContext2D, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(0, -r);
+  ctx.lineTo(r * 0.85, -r * 0.55);
+  ctx.lineTo(r * 0.5, r * 0.15);
+  ctx.lineTo(r * 0.2, r * 0.55);
+  ctx.lineTo(0, r * 0.45);
+  ctx.lineTo(-r * 0.2, r * 0.55);
+  ctx.lineTo(-r * 0.5, r * 0.15);
+  ctx.lineTo(-r * 0.85, -r * 0.55);
+  ctx.closePath();
+  fillStrokeShip(ctx, bodyFill(ctx, r));
+  ctx.beginPath();
+  ctx.moveTo(0, -r * 0.5);
+  ctx.lineTo(-r * 0.2, r * 0.1);
+  ctx.lineTo(r * 0.2, r * 0.1);
+  ctx.closePath();
+  ctx.fillStyle = ctx.strokeStyle as string;
+  ctx.globalAlpha = 0.4;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  cockpit(ctx, 0, -r * 0.15, r * 0.2);
+}
+
 export const PLAYER_DESIGNS: Record<string, PlayerDesign> = {
   triangle:  { id: 'triangle',  name: 'Triángulo',  color: '#22d3ee', draw: drawTriangle },
   diamond:   { id: 'diamond',   name: 'Diamante',   color: '#e879f9', draw: drawDiamond },
@@ -232,6 +306,9 @@ export const PLAYER_DESIGNS: Record<string, PlayerDesign> = {
   star:      { id: 'star',      name: 'Estrella',   color: '#facc15', draw: drawStar },
   crescent:  { id: 'crescent',  name: 'Media Luna', color: '#cbd5e1', draw: drawCrescent },
   crux:      { id: 'crux',      name: 'Cruz',       color: '#f43f5e', draw: drawCrux },
+  phoenix:   { id: 'phoenix',   name: 'Fénix',      color: '#f97316', draw: drawPhoenix },
+  viper:     { id: 'viper',     name: 'Víbora',     color: '#84cc16', draw: drawViper },
+  falcon:    { id: 'falcon',    name: 'Halcón',     color: '#38bdf8', draw: drawFalcon },
 };
 
 export const GAME_VERSION = '0.7.3';
@@ -242,4 +319,6 @@ export const BULLET_STYLES: Record<string, BulletStyle> = {
   dual:      { id: 'dual',      name: 'Doble' },
   beam:      { id: 'beam',      name: 'Láser' },
   spark:     { id: 'spark',     name: 'Chispa' },
+  vortex:    { id: 'vortex',    name: 'Vórtice' },
+  plasma:    { id: 'plasma',    name: 'Plasma' },
 };

@@ -105,6 +105,7 @@
             <button id="resume-btn" class="menu-btn primary-btn hidden">Continuar partida</button>
             <button id="start-btn" class="menu-btn primary-btn">Iniciar</button>
             <button id="design-toggle" class="menu-btn">Personalizar</button>
+            <button id="shop-btn" class="menu-btn">Tienda</button>
             <button id="how-to-play-btn" class="menu-btn">Cómo Jugar</button>
             <button id="leaderboard-btn" class="menu-btn">Clasificación</button>
             <div id="start-footer">
@@ -132,6 +133,7 @@
                 <h1>GAME OVER</h1>
                 <input type="text" id="gameover-name-input" placeholder="Tu nombre" maxlength="12" autocomplete="off">
                 <p id="final-score">0</p>
+                <button id="revive-ad-btn" class="menu-btn revive-btn hidden">Ver anuncio para continuar</button>
                 <div id="gameover-leaderboard">
                     <h3>TOP 100 GLOBAL</h3>
                     <div id="gameover-local-lb" class="lb-list"></div>
@@ -197,6 +199,13 @@
                 </div>
             </div>
             <button id="leaderboard-back-btn" class="screen-back-btn">Volver</button>
+        </div>
+        <div id="shop-screen" class="hidden">
+            <div class="screen-content">
+                <h1 style="color: var(--flame); text-shadow: 0 0 20px var(--flame);">TIENDA</h1>
+                <div id="shop-list"></div>
+            </div>
+            <button id="shop-back-btn" class="screen-back-btn">Volver</button>
         </div>
     </div>
     <script src="dist/game.min.js"></script>

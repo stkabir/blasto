@@ -162,7 +162,7 @@ export interface GameInput {
   right: boolean;
 }
 
-export type GameState = 'start' | 'playing' | 'paused' | 'gameover' | 'instructions' | 'customize' | 'leaderboard';
+export type GameState = 'start' | 'playing' | 'paused' | 'gameover' | 'instructions' | 'customize' | 'leaderboard' | 'shop';
 
 export type AsteroidTypeKey = 'LIGHT' | 'MED' | 'BLUE' | 'PURPLE' | 'RED';
 
