@@ -179,6 +179,11 @@ class Game {
 
     initAds();
 
+    if (!isNative()) {
+      const shopBtn = document.getElementById('shop-btn');
+      if (shopBtn) shopBtn.style.display = 'none';
+    }
+
     requestAnimationFrame((t) => this.loop(t));
   }
 

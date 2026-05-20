@@ -1,5 +1,6 @@
 package pro.blasto.game;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
@@ -23,8 +24,6 @@ import com.google.android.gms.ads.OnUserEarnedRewardListener;
 import com.google.android.gms.ads.rewarded.RewardItem;
 import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
-import com.google.android.gms.ads.initialization.InitializationStatus;
-import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
 
 @CapacitorPlugin(name = "BlastoAdMob")
 public class AdMobPlugin extends Plugin {
@@ -32,7 +31,6 @@ public class AdMobPlugin extends Plugin {
     private static final String TAG = "BlastoAdMob";
     private static final String BANNER_ID = "ca-app-pub-2603532225773045/1397910983";
     private static final String REWARD_ID = "ca-app-pub-2603532225773045/8696982352";
-    private static final String APP_ID = "ca-app-pub-2603532225773045~2434826332";
 
     private AdView bannerView;
     private RewardedAd rewardedAd;
@@ -41,68 +39,58 @@ public class AdMobPlugin extends Plugin {
 
     @Override
     public void load() {
-        try {
-            ensureSdkInitialized();
-        } catch (Exception e) {
-            Log.e(TAG, "load error", e);
-        }
     }
 
-    private void ensureSdkInitialized() {
-        if (sdkInitialized) return;
+    private boolean ensureSdkInitialized() {
+        if (sdkInitialized) return true;
 
         Context context = getContext();
-        if (context == null) {
-            Log.w(TAG, "Context not available, skipping AdMob init");
-            return;
-        }
+        if (context == null) return false;
 
         try {
             MobileAds.initialize(context, status -> {
                 sdkInitialized = true;
-                Log.d(TAG, "AdMob SDK initialized");
+                Log.d(TAG, "AdMob initialized");
                 preloadRewardAd();
             });
+            return true;
         } catch (Exception e) {
             Log.e(TAG, "AdMob init failed", e);
+            return false;
         }
     }
 
-    @PluginMethod
-    public void initialize(PluginCall call) {
-        try {
-            ensureSdkInitialized();
-            JSObject result = new JSObject();
-            result.put("value", true);
-            call.resolve(result);
-        } catch (Exception e) {
-            call.reject(e.getMessage(), e);
+    private Activity safeGetActivity() {
+        Context context = getContext();
+        if (context instanceof Activity) {
+            return (Activity) context;
         }
+        return null;
     }
 
     @PluginMethod
     public void showBanner(PluginCall call) {
-        String adId = call.getString("adId", BANNER_ID);
-        Context context = getContext();
-        if (context == null || !(context instanceof android.app.Activity)) {
-            JSObject result = new JSObject();
-            result.put("value", false);
-            call.resolve(result);
-            return;
-        }
-
         try {
-            runOnUi(() -> showBannerInternal((android.app.Activity) context, adId));
+            Activity activity = safeGetActivity();
+            if (activity == null) {
+                call.reject("Activity not available");
+                return;
+            }
+            ensureSdkInitialized();
+
+            String adId = call.getString("adId", BANNER_ID);
+            runOnUi(() -> showBannerInternal(activity, adId));
+
             JSObject result = new JSObject();
             result.put("value", true);
             call.resolve(result);
         } catch (Exception e) {
-            Log.e(TAG, "showBanner error", e);
-            call.reject(e.getMessage(), e);
+            Log.e(TAG, "showBanner", e);
+            call.reject(e.getMessage());
         }
     }
 
-    private void showBannerInternal(android.app.Activity activity, String adId) {
+    private void showBannerInternal(Activity activity, String adId) {
         try {
             if (bannerView != null) {
                 ViewGroup parent = (ViewGroup) bannerView.getParent();
@@ -125,7 +113,7 @@ public class AdMobPlugin extends Plugin {
             AdRequest adRequest = new AdRequest.Builder().build();
             bannerView.loadAd(adRequest);
         } catch (Exception e) {
-            Log.e(TAG, "showBannerInternal error", e);
+            Log.e(TAG, "showBannerInternal", e);
         }
     }
 
@@ -134,9 +122,13 @@ public class AdMobPlugin extends Plugin {
         try {
             runOnUi(() -> {
                 if (bannerView != null) {
-                    ViewGroup parent = (ViewGroup) bannerView.getParent();
-                    if (parent != null) parent.removeView(bannerView);
-                    bannerView.destroy();
+                    try {
+                        ViewGroup parent = (ViewGroup) bannerView.getParent();
+                        if (parent != null) parent.removeView(bannerView);
+                        bannerView.destroy();
+                    } catch (Exception e) {
+                        Log.e(TAG, "hideBanner cleanup", e);
+                    }
                     bannerView = null;
                 }
             });
@@ -144,22 +136,23 @@ public class AdMobPlugin extends Plugin {
             result.put("value", true);
             call.resolve(result);
         } catch (Exception e) {
-            Log.e(TAG, "hideBanner error", e);
-            call.reject(e.getMessage(), e);
+            Log.e(TAG, "hideBanner", e);
+            call.reject(e.getMessage());
         }
     }
 
     @PluginMethod
     public void prepareRewardVideoAd(PluginCall call) {
-        String adId = call.getString("adId", REWARD_ID);
         try {
+            ensureSdkInitialized();
+            String adId = call.getString("adId", REWARD_ID);
             preloadRewardAdInternal(adId);
             JSObject result = new JSObject();
             result.put("value", true);
             call.resolve(result);
         } catch (Exception e) {
-            Log.e(TAG, "prepareRewardVideoAd error", e);
-            call.reject(e.getMessage(), e);
+            Log.e(TAG, "prepareRewardVideoAd", e);
+            call.reject(e.getMessage());
         }
     }
 
@@ -170,110 +163,95 @@ public class AdMobPlugin extends Plugin {
     private void preloadRewardAdInternal(String adId) {
         if (rewardAdLoading) return;
 
-        Context context = getContext();
-        if (context == null || !(context instanceof android.app.Activity)) return;
+        Activity activity = safeGetActivity();
+        if (activity == null) return;
 
         rewardAdLoading = true;
         AdRequest adRequest = new AdRequest.Builder().build();
 
         try {
-            RewardedAd.load(context, adId, adRequest, new RewardedAdLoadCallback() {
+            RewardedAd.load(activity, adId, adRequest, new RewardedAdLoadCallback() {
                 @Override
                 public void onAdLoaded(RewardedAd ad) {
                     rewardedAd = ad;
                     rewardAdLoading = false;
-                    try {
-                        JSObject data = new JSObject();
-                        notifyListeners("onRewardedVideoAdLoaded", data);
-                    } catch (Exception e) {
-                        Log.e(TAG, "notifyListeners error", e);
-                    }
+                    tryNotify("onRewardedVideoAdLoaded", new JSObject());
                 }
 
                 @Override
                 public void onAdFailedToLoad(LoadAdError error) {
                     rewardAdLoading = false;
                     rewardedAd = null;
-                    try {
-                        JSObject data = new JSObject();
-                        data.put("error", error != null ? error.getMessage() : "unknown");
-                        notifyListeners("onRewardedVideoAdFailedToLoad", data);
-                    } catch (Exception e) {
-                        Log.e(TAG, "notifyListeners error", e);
-                    }
+                    JSObject data = new JSObject();
+                    data.put("error", error != null ? error.getMessage() : "unknown");
+                    tryNotify("onRewardedVideoAdFailedToLoad", data);
                 }
             });
         } catch (Exception e) {
             rewardAdLoading = false;
-            Log.e(TAG, "preloadRewardAd error", e);
+            Log.e(TAG, "preloadRewardAd", e);
         }
     }
 
     @PluginMethod
     public void showRewardVideoAd(PluginCall call) {
-        Context context = getContext();
-        if (context == null || !(context instanceof android.app.Activity)) {
-            JSObject result = new JSObject();
-            result.put("value", false);
-            call.resolve(result);
-            return;
-        }
-
-        android.app.Activity activity = (android.app.Activity) context;
-
-        if (rewardedAd == null) {
-            preloadRewardAd();
-            JSObject result = new JSObject();
-            result.put("value", false);
-            call.resolve(result);
-            return;
-        }
-
         try {
-            runOnUi(() -> {
-                rewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
-                    @Override
-                    public void onAdDismissedFullScreenContent() {
-                        try {
-                            JSObject data = new JSObject();
-                            notifyListeners("onRewardedVideoAdClosed", data);
-                        } catch (Exception e) {
-                            Log.e(TAG, "notifyListeners error", e);
-                        }
-                        preloadRewardAd();
-                    }
+            Activity activity = safeGetActivity();
+            if (activity == null) {
+                call.reject("Activity not available");
+                return;
+            }
 
-                    @Override
-                    public void onAdFailedToShowFullScreenContent(AdError error) {
-                        try {
+            ensureSdkInitialized();
+
+            if (rewardedAd == null) {
+                preloadRewardAd();
+                JSObject result = new JSObject();
+                result.put("value", false);
+                call.resolve(result);
+                return;
+            }
+
+            runOnUi(() -> {
+                try {
+                    rewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                        @Override
+                        public void onAdDismissedFullScreenContent() {
+                            tryNotify("onRewardedVideoAdClosed", new JSObject());
+                            preloadRewardAd();
+                        }
+
+                        @Override
+                        public void onAdFailedToShowFullScreenContent(AdError error) {
                             JSObject data = new JSObject();
                             data.put("error", error != null ? error.getMessage() : "unknown");
-                            notifyListeners("onRewardedVideoAdFailedToLoad", data);
-                        } catch (Exception e) {
-                            Log.e(TAG, "notifyListeners error", e);
+                            tryNotify("onRewardedVideoAdFailedToLoad", data);
+                            preloadRewardAd();
                         }
-                        preloadRewardAd();
-                    }
-                });
+                    });
 
-                rewardedAd.show(activity, (RewardItem rewardItem) -> {
-                    try {
-                        JSObject data = new JSObject();
-                        notifyListeners("onRewarded", data);
-                    } catch (Exception e) {
-                        Log.e(TAG, "notifyListeners error", e);
-                    }
-                });
+                    rewardedAd.show(activity, (RewardItem rewardItem) -> {
+                        tryNotify("onRewarded", new JSObject());
+                    });
+                } catch (Exception e) {
+                    Log.e(TAG, "showRewardVideoAd internal", e);
+                }
             });
 
             JSObject result = new JSObject();
             result.put("value", true);
             call.resolve(result);
         } catch (Exception e) {
-            Log.e(TAG, "showRewardVideoAd error", e);
-            JSObject result = new JSObject();
-            result.put("value", false);
-            call.resolve(result);
+            Log.e(TAG, "showRewardVideoAd", e);
+            call.reject(e.getMessage());
+        }
+    }
+
+    private void tryNotify(String event, JSObject data) {
+        try {
+            notifyListeners(event, data);
+        } catch (Exception e) {
+            Log.e(TAG, "notify error: " + event, e);
         }
     }
 
@@ -289,7 +267,7 @@ public class AdMobPlugin extends Plugin {
                 bannerView = null;
             }
         } catch (Exception e) {
-            Log.e(TAG, "handleOnDestroy error", e);
+            Log.e(TAG, "handleOnDestroy", e);
         }
         rewardedAd = null;
         super.handleOnDestroy();
