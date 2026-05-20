@@ -47,6 +47,9 @@ async function build() {
     if (fs.existsSync(path.join(__dirname, 'index.html'))) {
       fs.copyFileSync(path.join(__dirname, 'index.html'), path.join(__dirname, 'www', 'index.html'));
     }
+    if (fs.existsSync(path.join(__dirname, 'privacy'))) {
+      copyDir(path.join(__dirname, 'privacy'), path.join(__dirname, 'www', 'privacy'));
+    }
     for (const f of ['favicon.svg', 'favicon.png', 'social.png']) {
       const src = path.join(__dirname, f);
       if (fs.existsSync(src)) {

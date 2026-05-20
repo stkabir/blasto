@@ -18,6 +18,7 @@ FROM nginx:alpine
 COPY --from=builder /app/dist/game.min.js /usr/share/nginx/html/dist/
 COPY css/ /usr/share/nginx/html/css/
 COPY index.html /usr/share/nginx/html/
+COPY privacy/ /usr/share/nginx/html/privacy/
 COPY favicon.svg /usr/share/nginx/html/
 COPY favicon.png /usr/share/nginx/html/
 COPY favicon-64.png /usr/share/nginx/html/
