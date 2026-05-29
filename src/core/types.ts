@@ -153,7 +153,11 @@ export interface BossBullet {
   targetX: number;
   targetY: number;
   radius: number;
+  vx?: number;
+  vy?: number;
 }
+
+export type BossTypeKey = 'horizontal' | 'asteroid_spawner' | 'pattern' | 'stationary';
 
 export interface GameInput {
   touchX: number | null;

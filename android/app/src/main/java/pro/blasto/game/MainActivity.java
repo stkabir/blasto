@@ -3,15 +3,29 @@ package pro.blasto.game;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
         registerPlugin(AdMobPlugin.class);
+        registerPlugin(BillingPlugin.class);
+        super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        tuneWebViewForGameRendering();
         hideSystemUI();
+    }
+
+    private void tuneWebViewForGameRendering() {
+        WebView wv = getBridge().getWebView();
+        if (wv == null) return;
+        WebSettings s = wv.getSettings();
+        s.setCacheMode(WebSettings.LOAD_DEFAULT);
+        s.setRenderPriority(WebSettings.RenderPriority.HIGH);
+        wv.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        wv.setBackgroundColor(0xFF000000);
     }
 
     @Override

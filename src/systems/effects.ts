@@ -1,5 +1,18 @@
-import type { TrailParticle, Explosion, FloatingText, Announcement, SpeedLine, Shockwave } from '../core/types.js';
+import type { TrailParticle, Explosion, ExplosionParticle, FloatingText, Announcement, SpeedLine, Shockwave } from '../core/types.js';
 import type { Player } from '../entities/player.js';
+
+const particlePool: ExplosionParticle[] = [];
+
+function acquireParticle(): ExplosionParticle {
+  return particlePool.pop() ?? ({
+    x: 0, y: 0, vx: 0, vy: 0, radius: 1, life: 1, color: '#fff',
+  } as ExplosionParticle);
+}
+
+function releaseParticles(ps: ExplosionParticle[]): void {
+  for (const p of ps) particlePool.push(p);
+  ps.length = 0;
+}
 
 export interface EffectsState {
   playerTrail: TrailParticle[];
@@ -62,70 +75,96 @@ export function updateTrail(effects: EffectsState, dt: number): void {
   }
 }
 
+const trailSpriteCache = new Map<string, HTMLCanvasElement>();
+const TRAIL_SPRITE_RADIUS = 16;
+
+function getTrailSprite(color: string): HTMLCanvasElement {
+  const cached = trailSpriteCache.get(color);
+  if (cached) return cached;
+  const r = TRAIL_SPRITE_RADIUS;
+  const dim = r * 2;
+  const c = document.createElement('canvas');
+  c.width = dim;
+  c.height = dim;
+  const cx = c.getContext('2d')!;
+  const g = cx.createRadialGradient(r, r, 0, r, r, r);
+  g.addColorStop(0, color);
+  g.addColorStop(0.4, color);
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  cx.fillStyle = g;
+  cx.beginPath();
+  cx.arc(r, r, r, 0, Math.PI * 2);
+  cx.fill();
+  trailSpriteCache.set(color, c);
+  return c;
+}
+
 export function drawTrail(ctx: CanvasRenderingContext2D, effects: EffectsState): void {
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   for (const p of effects.playerTrail) {
+    const sp = getTrailSprite(p.color);
+    const scale = p.size / 3;
+    const size = TRAIL_SPRITE_RADIUS * 2 * scale;
     ctx.globalAlpha = p.alpha;
-    ctx.shadowColor = p.color;
-    ctx.shadowBlur = p.size * 3;
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.drawImage(sp, p.x - size * 0.5, p.y - size * 0.5, size, size);
   }
   ctx.restore();
   ctx.globalAlpha = 1;
 }
 
 export function createExplosion(x: number, y: number, color: string, scale: number = 1): Explosion {
-  const particles = [];
+  const particles: ExplosionParticle[] = [];
   const dotCount = Math.floor(14 * scale);
   for (let i = 0; i < dotCount; i++) {
     const angle = (i / dotCount) * Math.PI * 2 + Math.random() * 0.4;
     const speed = (80 + Math.random() * 120) * scale;
-    particles.push({
-      x, y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      radius: (2 + Math.random() * 4) * scale,
-      life: 1,
-      color: '#ffffff',
-      shape: 'dot' as const,
-      decay: 2.5,
-    });
+    const p = acquireParticle();
+    p.x = x; p.y = y;
+    p.vx = Math.cos(angle) * speed;
+    p.vy = Math.sin(angle) * speed;
+    p.radius = (2 + Math.random() * 4) * scale;
+    p.life = 1;
+    p.color = '#ffffff';
+    p.shape = 'dot';
+    p.decay = 2.5;
+    p.rotation = undefined;
+    p.rotSpeed = undefined;
+    particles.push(p);
   }
   const chunkCount = Math.floor(8 * scale);
   for (let i = 0; i < chunkCount; i++) {
     const angle = Math.random() * Math.PI * 2;
     const speed = (50 + Math.random() * 90) * scale;
-    particles.push({
-      x, y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 30,
-      radius: (3 + Math.random() * 5) * scale,
-      life: 1,
-      color,
-      rotation: Math.random() * Math.PI * 2,
-      rotSpeed: (Math.random() - 0.5) * 8,
-      shape: 'chunk' as const,
-      decay: 1.4,
-    });
+    const p = acquireParticle();
+    p.x = x; p.y = y;
+    p.vx = Math.cos(angle) * speed;
+    p.vy = Math.sin(angle) * speed - 30;
+    p.radius = (3 + Math.random() * 5) * scale;
+    p.life = 1;
+    p.color = color;
+    p.rotation = Math.random() * Math.PI * 2;
+    p.rotSpeed = (Math.random() - 0.5) * 8;
+    p.shape = 'chunk';
+    p.decay = 1.4;
+    particles.push(p);
   }
   const sparkCount = Math.floor(10 * scale);
   for (let i = 0; i < sparkCount; i++) {
     const angle = Math.random() * Math.PI * 2;
     const speed = (180 + Math.random() * 200) * scale;
-    particles.push({
-      x, y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      radius: 1.5 + Math.random() * 1.5,
-      life: 1,
-      color,
-      shape: 'spark' as const,
-      decay: 3,
-    });
+    const p = acquireParticle();
+    p.x = x; p.y = y;
+    p.vx = Math.cos(angle) * speed;
+    p.vy = Math.sin(angle) * speed;
+    p.radius = 1.5 + Math.random() * 1.5;
+    p.life = 1;
+    p.color = color;
+    p.shape = 'spark';
+    p.decay = 3;
+    p.rotation = undefined;
+    p.rotSpeed = undefined;
+    particles.push(p);
   }
   return { particles };
 }
@@ -150,8 +189,6 @@ export function drawShockwaves(ctx: CanvasRenderingContext2D, effects: EffectsSt
     ctx.globalAlpha = s.alpha;
     ctx.strokeStyle = s.color;
     ctx.lineWidth = 3;
-    ctx.shadowColor = s.color;
-    ctx.shadowBlur = 12;
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
     ctx.stroke();
@@ -176,7 +213,10 @@ export function updateExplosions(explosions: Explosion[], dt: number): void {
       p.life -= dt * (p.decay ?? 2);
       if (p.life > 0) allDead = false;
     }
-    if (allDead) explosions.splice(i, 1);
+    if (allDead) {
+      releaseParticles(exp.particles);
+      explosions.splice(i, 1);
+    }
   }
 }
 
@@ -192,14 +232,10 @@ export function drawExplosions(ctx: CanvasRenderingContext2D, explosions: Explos
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rotation);
         ctx.fillStyle = p.color;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 6;
         const r = p.radius * Math.max(0.3, p.life);
         ctx.fillRect(-r, -r * 0.6, r * 2, r * 1.2);
         ctx.restore();
       } else if (p.shape === 'spark') {
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 8;
         ctx.strokeStyle = p.color;
         ctx.lineWidth = p.radius;
         ctx.lineCap = 'round';
@@ -208,8 +244,6 @@ export function drawExplosions(ctx: CanvasRenderingContext2D, explosions: Explos
         ctx.lineTo(p.x - p.vx * 0.04, p.y - p.vy * 0.04);
         ctx.stroke();
       } else {
-        ctx.shadowColor = p.color === '#ffffff' ? '#fde68a' : p.color;
-        ctx.shadowBlur = 10;
         ctx.fillStyle = p.color;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius * Math.max(0.2, p.life), 0, Math.PI * 2);

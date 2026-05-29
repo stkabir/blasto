@@ -3,6 +3,7 @@ import { BACKGROUNDS } from '../background.js';
 import { getDesignSVG } from '../core/utils.js';
 import { soundManager } from '../systems/audio.js';
 import { isPurchased, PREMIUM_DESIGNS, PREMIUM_BULLETS, PREMIUM_BACKGROUNDS } from '../monetization/unlocks.js';
+import { isNative } from '../monetization/ads.js';
 
 function getBulletStyleSVG(id: string, colorOverride: string): string {
   const color = colorOverride || '#22d3ee';
@@ -54,12 +55,22 @@ export interface CustomizationState {
 
 export function selectBackground(state: CustomizationState, id: string): void {
   const premiumIds = PREMIUM_BACKGROUNDS.map(b => b.id);
-  if (premiumIds.includes(id) && !isPurchased('background', id)) return;
+  const isLocked = premiumIds.includes(id) && !isPurchased('background', id);
+
   state.background = id;
-  localStorage.setItem('blasto_background', id);
+
+  if (!isLocked) {
+    localStorage.setItem('blasto_background', id);
+  }
+
   const items = document.querySelectorAll('.customize-bg-item');
   items.forEach(item => {
-    item.classList.toggle('selected', (item as HTMLElement).dataset.id === id && !item.classList.contains('locked'));
+    const itemId = (item as HTMLElement).dataset.id;
+    if (itemId === id && !isLocked) {
+      item.classList.add('selected');
+    } else {
+      item.classList.remove('selected');
+    }
   });
 }
 
@@ -198,6 +209,7 @@ export function createCustomizeList(
     item.dataset.id = design.id;
 
     const isLocked = premiumDesigns.includes(design.id) && !isPurchased('design', design.id);
+    if (!isNative() && isLocked) return;
     if (isLocked) {
       item.classList.add('locked');
     }
@@ -244,6 +256,7 @@ export function createCustomizeList(
     item.dataset.id = style.id;
 
     const isLocked = premiumBullets.includes(style.id) && !isPurchased('bullet', style.id);
+    if (!isNative() && isLocked) return;
     if (isLocked) {
       item.classList.add('locked');
     }
@@ -284,11 +297,13 @@ export function createCustomizeList(
   bgGrid.className = 'customize-grid';
   const premiumBgs = PREMIUM_BACKGROUNDS.map(bg => bg.id);
   BACKGROUNDS.forEach(bg => {
+    const isLocked = premiumBgs.includes(bg.id) && !isPurchased('background', bg.id);
+    if (!isNative() && isLocked) return;
+
     const item = document.createElement('div');
     item.className = 'customize-bg-item customize-design-item';
     item.dataset.id = bg.id;
 
-    const isLocked = premiumBgs.includes(bg.id) && !isPurchased('background', bg.id);
     if (isLocked) {
       item.classList.add('locked');
     }
@@ -322,6 +337,7 @@ export function createCustomizeList(
     item.addEventListener('click', () => {
       if (isLocked) {
         soundManager.play('menu_click');
+        onSelectBackground && onSelectBackground(bg.id);
         return;
       }
       onSelectBackground && onSelectBackground(bg.id);

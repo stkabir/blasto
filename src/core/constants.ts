@@ -1,4 +1,4 @@
-import type { AsteroidType, AsteroidTypeKey, PlayerDesign, BulletStyle, PowerUpType } from './types.js';
+import type { AsteroidType, AsteroidTypeKey, PlayerDesign, BulletStyle, PowerUpType, BossTypeKey } from './types.js';
 
 export const GAME_CONFIG = {
   targetFPS: 60,
@@ -29,15 +29,67 @@ export const PLAYER_CONFIG = {
   bulletDamage: 1,
 };
 
-export const BOSS_CONFIG = {
-  pointsToAppear: 1000,
-  pointsReward: 350,
-  speed: 100,
-  bulletSpeed: 225,
-  fireInterval: 600,
-  width: 80,
-  height: 60,
+export interface BossTypeConfig {
+  id: BossTypeKey;
+  name: string;
+  hp: number;
+  speed: number;
+  bulletSpeed: number;
+  fireInterval: number;
+  width: number;
+  height: number;
+  radius?: number;
+}
+
+export const BOSS_TYPES: Record<BossTypeKey, BossTypeConfig> = {
+  horizontal: {
+    id: 'horizontal',
+    name: 'Jefe Alien',
+    hp: 350,
+    speed: 100,
+    bulletSpeed: 225,
+    fireInterval: 600,
+    width: 80,
+    height: 60,
+  },
+  asteroid_spawner: {
+    id: 'asteroid_spawner',
+    name: 'Asteroide Madre',
+    hp: 300,
+    speed: 22,
+    bulletSpeed: 0,
+    fireInterval: 0,
+    width: 160,
+    height: 160,
+    radius: 80,
+  },
+  pattern: {
+    id: 'pattern',
+    name: 'Nave de Asalto',
+    hp: 300,
+    speed: 130,
+    bulletSpeed: 250,
+    fireInterval: 800,
+    width: 90,
+    height: 50,
+  },
+  stationary: {
+    id: 'stationary',
+    name: 'Fortaleza',
+    hp: 500,
+    speed: 0,
+    bulletSpeed: 200,
+    fireInterval: 700,
+    width: 140,
+    height: 90,
+  },
 };
+
+export const BOSS_POINTS_BONUS = 5000;
+
+export function getBossHP(baseHP: number, wave: number): number {
+  return Math.floor(baseHP * (1 + wave * 0.05));
+}
 
 export const POWERUP_TYPES: Record<string, PowerUpType> = {
   TRIPLE: { id: 'triple', name: 'Triple', duration: 10000, color: '#22d3ee', icon: '⚡' },
@@ -311,7 +363,7 @@ export const PLAYER_DESIGNS: Record<string, PlayerDesign> = {
   falcon:    { id: 'falcon',    name: 'Halcón',     color: '#38bdf8', draw: drawFalcon },
 };
 
-export const GAME_VERSION = '0.7.3';
+export const GAME_VERSION = '0.8.0';
 
 export const BULLET_STYLES: Record<string, BulletStyle> = {
   glow:      { id: 'glow',      name: 'Brillo' },

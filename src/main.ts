@@ -5,7 +5,7 @@ import { AsteroidManager } from './entities/asteroid.js';
 import { BossManager } from './entities/boss.js';
 import { PowerUpManager } from './entities/powerup.js';
 import { soundManager } from './systems/audio.js';
-import { createBackgroundState, updateBackground, drawBackground, BACKGROUNDS, type BackgroundState } from './background.js';
+import { createBackgroundState, updateBackground, drawBackground, invalidateBackgroundCache, BACKGROUNDS, type BackgroundState } from './background.js';
 import {
   createEffectsState,
   addTrailParticle,
@@ -41,7 +41,8 @@ import { createPowerUpIcon, updatePowerUpIconStyles } from './ui/powerup-indicat
 import { getWordmarkSVG, getSplashLogoSVG } from './ui/logo.js';
 import type { GameState, GameInput, Rocket, ActivePowerUp } from './core/types.js';
 import { initAds, showRewardAd, showBanner, hideBanner, isNative } from './monetization/ads.js';
-import { addLives, consumeLife, getLivesBalance, hasRemoveAds, buyDesign, buyBullet, buyBackground, buyRemoveAds, buyMegaPack, isPurchased, PREMIUM_DESIGNS, PREMIUM_BULLETS, PREMIUM_BACKGROUNDS, IAP_PRODUCTS, type IAPProductId } from './monetization/unlocks.js';
+import { consumeLife, getLivesBalance, hasRemoveAds, isPurchased, grantProduct, PREMIUM_DESIGNS, PREMIUM_BULLETS, PREMIUM_BACKGROUNDS, IAP_PRODUCTS, type IAPProductId } from './monetization/unlocks.js';
+import { initBilling, purchase as billingPurchase, restorePurchases, isBillingAvailable, getProductInfo } from './monetization/billing.js';
 
 class Game {
   canvas: HTMLCanvasElement;
@@ -84,6 +85,7 @@ class Game {
   acc = 0;
 
   customization: CustomizationState;
+  _savedBackground: string = 'starfield';
   bossActive: boolean = false;
 
   lives: number = 3;
@@ -100,7 +102,7 @@ class Game {
 
   constructor() {
     this.canvas = document.getElementById('game') as HTMLCanvasElement;
-    this.ctx = this.canvas.getContext('2d')!;
+    this.ctx = this.canvas.getContext('2d', { alpha: false })!;
     this.scoreEl = document.getElementById('score')!;
     this.highEl = document.getElementById('high')!;
     this.powerupIndicator = document.getElementById('powerup-indicator')!;
@@ -179,7 +181,12 @@ class Game {
 
     initAds();
 
-    if (!isNative()) {
+    if (isNative()) {
+      initBilling();
+      if (!hasRemoveAds()) showBanner();
+      const dl = document.getElementById('download-apk');
+      if (dl) dl.style.display = 'none';
+    } else {
       const shopBtn = document.getElementById('shop-btn');
       if (shopBtn) shopBtn.style.display = 'none';
     }
@@ -190,6 +197,7 @@ class Game {
   resize(): void {
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
+    if (this.background) invalidateBackgroundCache(this.background);
   }
 
   initSplash(): void {
@@ -234,6 +242,7 @@ class Game {
   }
 
   showCustomize(): void {
+    this._savedBackground = this.customization.background;
     this.state = 'customize';
     this.startScreen.classList.add('hidden');
     this.customizeScreen.classList.remove('hidden');
@@ -241,6 +250,11 @@ class Game {
   }
 
   hideCustomize(): void {
+    const premiumBgs = PREMIUM_BACKGROUNDS.map(b => b.id);
+    const currentBg = this.customization.background;
+    if (premiumBgs.includes(currentBg) && !isPurchased('background', currentBg)) {
+      this.customization.background = this._savedBackground;
+    }
     this.customizeScreen.classList.add('hidden');
     this.startScreen.classList.remove('hidden');
     this.state = 'start';
@@ -300,34 +314,36 @@ class Game {
     livesLabel.innerHTML = `Vidas disponibles: <strong>${livesCount}</strong>`;
     this.shopList.appendChild(livesLabel);
 
-    const iapItems: { id: IAPProductId; name: string; desc: string; price: number; icon: string }[] = [
-      { ...IAP_PRODUCTS.removeAds, icon: '🚫' },
-      { ...IAP_PRODUCTS.lives5, icon: '❤️' },
-      { ...IAP_PRODUCTS.lives20, icon: '💕' },
-      { ...IAP_PRODUCTS.designPack, icon: '🚀' },
-      { ...IAP_PRODUCTS.bulletPack, icon: '💥' },
-      { ...IAP_PRODUCTS.bgPack, icon: '🎨' },
-      { ...IAP_PRODUCTS.megaPack, icon: '⭐' },
+    const iapItems: { id: IAPProductId; icon: string }[] = [
+      { id: 'remove_ads', icon: '🚫' },
+      { id: 'lives_5', icon: '❤️' },
+      { id: 'lives_20', icon: '💕' },
+      { id: 'design_pack', icon: '🚀' },
+      { id: 'bullet_pack', icon: '💥' },
+      { id: 'bg_pack', icon: '🎨' },
+      { id: 'mega_pack', icon: '⭐' },
     ];
 
-    for (const item of iapItems) {
+    for (const meta of iapItems) {
+      const info = getProductInfo(meta.id);
       const card = document.createElement('div');
       card.className = 'shop-item';
-      if (item.id === 'megaPack') card.classList.add('shop-item-featured');
+      card.dataset.productId = meta.id;
+      if (meta.id === 'mega_pack') card.classList.add('shop-item-featured');
 
       let purchased = false;
-      if (item.id === 'removeAds') purchased = hasRemoveAds();
-      else if (item.id === 'designPack') purchased = PREMIUM_DESIGNS.every(d => isPurchased('design', d.id));
-      else if (item.id === 'bulletPack') purchased = PREMIUM_BULLETS.every(b => isPurchased('bullet', b.id));
-      else if (item.id === 'bgPack') purchased = PREMIUM_BACKGROUNDS.every(bg => isPurchased('background', bg.id));
+      if (meta.id === 'remove_ads') purchased = hasRemoveAds();
+      else if (meta.id === 'design_pack') purchased = PREMIUM_DESIGNS.every(d => isPurchased('design', d.id));
+      else if (meta.id === 'bullet_pack') purchased = PREMIUM_BULLETS.every(b => isPurchased('bullet', b.id));
+      else if (meta.id === 'bg_pack') purchased = PREMIUM_BACKGROUNDS.every(bg => isPurchased('background', bg.id));
 
       card.innerHTML = `
-        <div class="shop-item-icon">${item.icon}</div>
+        <div class="shop-item-icon">${meta.icon}</div>
         <div class="shop-item-info">
-          <div class="shop-item-name">${item.name}</div>
-          <div class="shop-item-desc">${item.desc}</div>
+          <div class="shop-item-name">${info.title}</div>
+          <div class="shop-item-desc">${info.description}</div>
         </div>
-        <div class="shop-item-price">$${item.price.toFixed(2)}</div>
+        <div class="shop-item-price">${info.price}</div>
       `;
 
       if (purchased) {
@@ -340,38 +356,56 @@ class Game {
 
       card.addEventListener('click', () => {
         if (purchased) return;
-        this.purchaseItem(item.id);
+        this.purchaseItem(meta.id);
       });
 
       this.shopList.appendChild(card);
     }
+
+    const restoreBtn = document.createElement('button');
+    restoreBtn.className = 'shop-restore-btn secondary-btn';
+    restoreBtn.textContent = 'Restaurar compras';
+    restoreBtn.addEventListener('click', () => this.restoreShop());
+    this.shopList.appendChild(restoreBtn);
   }
 
-  purchaseItem(id: IAPProductId): void {
-    switch (id) {
-      case 'removeAds':
-        buyRemoveAds();
-        break;
-      case 'lives5':
-        addLives(5);
-        break;
-      case 'lives20':
-        addLives(20);
-        break;
-      case 'designPack':
-        for (const d of PREMIUM_DESIGNS) buyDesign(d.id);
-        break;
-      case 'bulletPack':
-        for (const b of PREMIUM_BULLETS) buyBullet(b.id);
-        break;
-      case 'bgPack':
-        for (const bg of PREMIUM_BACKGROUNDS) buyBackground(bg.id);
-        break;
-      case 'megaPack':
-        buyMegaPack();
-        break;
+  setShopBusy(busy: boolean): void {
+    this.shopList.style.pointerEvents = busy ? 'none' : '';
+    this.shopList.style.opacity = busy ? '0.6' : '';
+  }
+
+  async purchaseItem(id: IAPProductId): Promise<void> {
+    if (!isBillingAvailable()) {
+      alert('La tienda no está disponible en esta plataforma.');
+      return;
     }
-    this.renderShop();
+    this.setShopBusy(true);
+    try {
+      const result = await billingPurchase(id);
+      if (result.success) {
+        grantProduct(id);
+        this.renderShop();
+      } else if (!result.cancelled) {
+        alert('Error en la compra: ' + (result.error || 'desconocido'));
+      }
+    } finally {
+      this.setShopBusy(false);
+    }
+  }
+
+  async restoreShop(): Promise<void> {
+    if (!isBillingAvailable()) return;
+    this.setShopBusy(true);
+    try {
+      const ids = await restorePurchases();
+      for (const id of ids) {
+        if (id in IAP_PRODUCTS) grantProduct(id as IAPProductId);
+      }
+      this.renderShop();
+      if (ids.length === 0) alert('No se encontraron compras previas.');
+    } finally {
+      this.setShopBusy(false);
+    }
   }
 
   backToMenu(): void {
@@ -395,6 +429,7 @@ class Game {
     this.starSpeedMult = 1.0;
     this.targetStarSpeedMult = 1.0;
     this.currentTier = 0;
+    if (!hasRemoveAds()) showBanner();
     this.state = 'start';
   }
 
@@ -435,6 +470,7 @@ class Game {
 
   resumeGame(): void {
     this.state = 'playing';
+    hideBanner();
     this.startScreen.classList.add('hidden');
     this.gameOverScreen.classList.add('hidden');
     this.hud.classList.remove('hidden');
@@ -515,10 +551,16 @@ class Game {
     };
     this.asteroidManager.onBossWave = (wave: number) => {
       if (this.bossManager) {
-        this.bossManager.spawn();
+        this.bossManager.spawn(wave);
+        if (this.bossManager.boss) {
+          this.bossManager.boss.spawnAsteroidCb = (x, y) => {
+            this.asteroidManager!.spawnFromBoss(x, y);
+          };
+        }
         this.bossActive = true;
         triggerShake(this.effects, 10, 300);
-        announce(this.effects.announcements, this.canvas.height, this.canvas.width, '¡JEFE!', { color: '#ef4444', fontSize: 80 });
+        const ac = this.bossManager.boss!.getAnnouncementConfig();
+        announce(this.effects.announcements, this.canvas.height, this.canvas.width, ac.text, { color: ac.color, fontSize: ac.fontSize });
       }
     };
     this.bossManager = new BossManager();
@@ -574,6 +616,7 @@ class Game {
 
     this.state = 'playing';
     this.score = 0;
+    hideBanner();
     this.startScreen.classList.add('hidden');
     this.gameOverScreen.classList.add('hidden');
     this.hud.classList.remove('hidden');
@@ -657,10 +700,16 @@ class Game {
     };
     this.asteroidManager.onBossWave = (wave: number) => {
       if (this.bossManager) {
-        this.bossManager.spawn();
+        this.bossManager.spawn(wave);
+        if (this.bossManager.boss) {
+          this.bossManager.boss.spawnAsteroidCb = (x, y) => {
+            this.asteroidManager!.spawnFromBoss(x, y);
+          };
+        }
         this.bossActive = true;
         triggerShake(this.effects, 10, 300);
-        announce(this.effects.announcements, this.canvas.height, this.canvas.width, '¡JEFE!', { color: '#ef4444', fontSize: 80 });
+        const ac = this.bossManager.boss!.getAnnouncementConfig();
+        announce(this.effects.announcements, this.canvas.height, this.canvas.width, ac.text, { color: ac.color, fontSize: ac.fontSize });
       }
     };
     this.bossManager = new BossManager();
@@ -878,6 +927,7 @@ class Game {
 
   revivePlayer(): void {
     this.state = 'playing';
+    hideBanner();
     this.gameOverScreen.classList.add('hidden');
     this.hud.classList.remove('hidden');
 
@@ -975,11 +1025,14 @@ class Game {
     const dt = (timestamp - this.lastTime) / 1000;
     this.lastTime = timestamp;
 
-    this.acc += dt * 1000;
-    while (this.acc >= GAME_CONFIG.stepMs) {
+    this.acc += Math.min(dt * 1000, 100);
+    let steps = 0;
+    while (this.acc >= GAME_CONFIG.stepMs && steps < 5) {
       this.update(GAME_CONFIG.stepMs / 1000);
       this.acc -= GAME_CONFIG.stepMs;
+      steps++;
     }
+    if (steps === 5) this.acc = 0;
 
     this.draw();
     requestAnimationFrame((t) => this.loop(t));

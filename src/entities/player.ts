@@ -2,6 +2,60 @@ import { PLAYER_CONFIG, PLAYER_DESIGNS, BULLET_STYLES } from '../core/constants.
 import type { PlayerBullet, Rocket, GameInput } from '../core/types.js';
 import type { AsteroidManager } from './asteroid.js';
 
+const bulletSpriteCache = new Map<string, HTMLCanvasElement>();
+
+function getGlowSprite(color: string, radius: number, scale: number, shadowBlur: number): HTMLCanvasElement {
+  const key = `glow|${color}|${radius.toFixed(1)}|${scale}|${shadowBlur}`;
+  const cached = bulletSpriteCache.get(key);
+  if (cached) return cached;
+  const r = radius * scale;
+  const pad = shadowBlur + r + 2;
+  const dim = Math.ceil(pad * 2);
+  const c = document.createElement('canvas');
+  c.width = dim;
+  c.height = dim;
+  const cx = c.getContext('2d')!;
+  cx.shadowColor = color;
+  cx.shadowBlur = shadowBlur;
+  const g = cx.createRadialGradient(pad, pad, 0, pad, pad, r);
+  g.addColorStop(0, '#ffffff');
+  g.addColorStop(0.4, color);
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  cx.fillStyle = g;
+  cx.beginPath();
+  cx.arc(pad, pad, r, 0, Math.PI * 2);
+  cx.fill();
+  bulletSpriteCache.set(key, c);
+  return c;
+}
+
+function getPlasmaSprite(color: string, radius: number): HTMLCanvasElement {
+  const key = `plasma|${color}|${radius.toFixed(1)}`;
+  const cached = bulletSpriteCache.get(key);
+  if (cached) return cached;
+  const r = radius * 1.8;
+  const pad = 28 + r + 2;
+  const dim = Math.ceil(pad * 2);
+  const c = document.createElement('canvas');
+  c.width = dim;
+  c.height = dim;
+  const cx = c.getContext('2d')!;
+  cx.shadowColor = color;
+  cx.shadowBlur = 28;
+  const g = cx.createRadialGradient(pad, pad, 0, pad, pad, r);
+  g.addColorStop(0, '#ffffff');
+  g.addColorStop(0.3, color);
+  g.addColorStop(0.7, color);
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  cx.fillStyle = g;
+  cx.globalAlpha = 0.9;
+  cx.beginPath();
+  cx.arc(pad, pad, r, 0, Math.PI * 2);
+  cx.fill();
+  bulletSpriteCache.set(key, c);
+  return c;
+}
+
 export class Player {
   x: number;
   y: number;
@@ -197,16 +251,9 @@ export class Player {
 
     switch (this.bulletStyle) {
       case 'glow': {
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 24;
-        const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.radius * 1.5);
-        grad.addColorStop(0, '#ffffff');
-        grad.addColorStop(0.4, color);
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius * 1.5, 0, Math.PI * 2);
-        ctx.fill();
+        const sp = getGlowSprite(color, b.radius, 1.5, 24);
+        const half = sp.width * 0.5;
+        ctx.drawImage(sp, b.x - half, b.y - half);
         break;
       }
 
@@ -314,20 +361,13 @@ export class Player {
       case 'plasma': {
         const t = Date.now() / 180;
         const pSize = 1 + Math.sin(t * 4) * 0.3;
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 28;
-        const pg = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.radius * 1.8);
-        pg.addColorStop(0, '#ffffff');
-        pg.addColorStop(0.3, color);
-        pg.addColorStop(0.7, color);
-        pg.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = pg;
-        ctx.globalAlpha = 0.9;
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius * 1.8 * pSize, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        ctx.shadowBlur = 0;
+        const sp = getPlasmaSprite(color, b.radius);
+        const half = sp.width * 0.5;
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.scale(pSize, pSize);
+        ctx.drawImage(sp, -half, -half);
+        ctx.restore();
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.radius * 0.45, 0, Math.PI * 2);
@@ -337,17 +377,9 @@ export class Player {
 
       case 'dual':
       default: {
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 22;
-        const dg = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.radius * 1.2);
-        dg.addColorStop(0, '#ffffff');
-        dg.addColorStop(0.4, color);
-        dg.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = dg;
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius * 1.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
+        const sp = getGlowSprite(color, b.radius, 1.2, 22);
+        const half = sp.width * 0.5;
+        ctx.drawImage(sp, b.x - half, b.y - half);
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.radius * 0.32, 0, Math.PI * 2);

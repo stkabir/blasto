@@ -35,6 +35,8 @@ export class Asteroid {
   craters: Crater[];
   veins: Vein[];
   maxHp: number;
+  sprite: HTMLCanvasElement | null = null;
+  spriteHp: number = -1;
 
   constructor(x: number, y: number, type: AsteroidTypeKey, vx: number | null = null, vy: number | null = null) {
     this.x = x;
@@ -130,126 +132,144 @@ export class Asteroid {
     return true;
   }
 
-  draw(ctx: CanvasRenderingContext2D): void {
-    ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.rotation);
+  private buildSprite(): HTMLCanvasElement {
+    const r = this.radius;
+    const pad = Math.ceil(r * 1.2);
+    const dim = pad * 2;
+    const c = document.createElement('canvas');
+    c.width = dim;
+    c.height = dim;
+    const cx = c.getContext('2d')!;
+    cx.translate(pad, pad);
 
     const palette = {
       base: this.type.color,
       highlight: mix(this.type.color, '#ffffff', 0.35),
       shadow: mix(this.type.color, '#000000', 0.55),
     };
-    const r = this.radius;
 
-    ctx.beginPath();
+    cx.beginPath();
     for (let i = 0; i < this.vertices.length; i++) {
-      if (i === 0) ctx.moveTo(this.vertices[i].x, this.vertices[i].y);
-      else ctx.lineTo(this.vertices[i].x, this.vertices[i].y);
+      if (i === 0) cx.moveTo(this.vertices[i].x, this.vertices[i].y);
+      else cx.lineTo(this.vertices[i].x, this.vertices[i].y);
     }
-    ctx.closePath();
+    cx.closePath();
+    cx.fillStyle = palette.base;
+    cx.fill();
 
-    ctx.fillStyle = palette.base;
-    ctx.fill();
+    cx.save();
+    cx.clip();
 
-    ctx.save();
-    ctx.clip();
-
-    ctx.fillStyle = palette.shadow;
-    ctx.globalAlpha = 0.45;
-    ctx.beginPath();
+    cx.fillStyle = palette.shadow;
+    cx.globalAlpha = 0.45;
+    cx.beginPath();
     for (let i = 0; i < this.innerVertices.length; i++) {
       const v = this.innerVertices[i];
       const x = v.x + r * 0.35;
       const y = v.y + r * 0.35;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+      if (i === 0) cx.moveTo(x, y);
+      else cx.lineTo(x, y);
     }
-    ctx.closePath();
-    ctx.fill();
-    ctx.globalAlpha = 1;
+    cx.closePath();
+    cx.fill();
+    cx.globalAlpha = 1;
 
-    ctx.fillStyle = palette.highlight;
-    ctx.globalAlpha = 0.35;
-    ctx.beginPath();
+    cx.fillStyle = palette.highlight;
+    cx.globalAlpha = 0.35;
+    cx.beginPath();
     for (let i = 0; i < this.innerVertices.length; i++) {
       const v = this.innerVertices[i];
       const x = v.x - r * 0.3;
       const y = v.y - r * 0.3;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+      if (i === 0) cx.moveTo(x, y);
+      else cx.lineTo(x, y);
     }
-    ctx.closePath();
-    ctx.fill();
-    ctx.globalAlpha = 1;
+    cx.closePath();
+    cx.fill();
+    cx.globalAlpha = 1;
 
-    ctx.strokeStyle = 'rgba(0,0,0,0.45)';
-    ctx.lineWidth = 1;
-    ctx.lineCap = 'round';
+    cx.strokeStyle = 'rgba(0,0,0,0.45)';
+    cx.lineWidth = 1;
+    cx.lineCap = 'round';
     for (const v of this.veins) {
-      ctx.beginPath();
-      ctx.moveTo(v.points[0].x, v.points[0].y);
+      cx.beginPath();
+      cx.moveTo(v.points[0].x, v.points[0].y);
       for (let i = 1; i < v.points.length; i++) {
-        ctx.lineTo(v.points[i].x, v.points[i].y);
+        cx.lineTo(v.points[i].x, v.points[i].y);
       }
-      ctx.stroke();
+      cx.stroke();
     }
 
-    for (const c of this.craters) {
-      ctx.fillStyle = palette.shadow;
-      ctx.globalAlpha = 0.85;
-      ctx.beginPath();
-      ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
-      ctx.fill();
+    for (const cr of this.craters) {
+      cx.fillStyle = palette.shadow;
+      cx.globalAlpha = 0.85;
+      cx.beginPath();
+      cx.arc(cr.x, cr.y, cr.r, 0, Math.PI * 2);
+      cx.fill();
 
-      ctx.globalAlpha = 0.6;
-      ctx.strokeStyle = palette.highlight;
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.arc(c.x, c.y, c.r * 0.95, c.lightAngle - Math.PI * 0.45, c.lightAngle + Math.PI * 0.45);
-      ctx.stroke();
+      cx.globalAlpha = 0.6;
+      cx.strokeStyle = palette.highlight;
+      cx.lineWidth = 1.2;
+      cx.beginPath();
+      cx.arc(cr.x, cr.y, cr.r * 0.95, cr.lightAngle - Math.PI * 0.45, cr.lightAngle + Math.PI * 0.45);
+      cx.stroke();
 
-      ctx.globalAlpha = 0.5;
-      ctx.strokeStyle = 'rgba(0,0,0,0.7)';
-      ctx.beginPath();
-      ctx.arc(c.x, c.y, c.r * 0.95, c.lightAngle + Math.PI - Math.PI * 0.45, c.lightAngle + Math.PI + Math.PI * 0.45);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
+      cx.globalAlpha = 0.5;
+      cx.strokeStyle = 'rgba(0,0,0,0.7)';
+      cx.beginPath();
+      cx.arc(cr.x, cr.y, cr.r * 0.95, cr.lightAngle + Math.PI - Math.PI * 0.45, cr.lightAngle + Math.PI + Math.PI * 0.45);
+      cx.stroke();
+      cx.globalAlpha = 1;
     }
 
     const dmg = 1 - this.hp / this.maxHp;
     if (dmg > 0.15) {
-      ctx.strokeStyle = `rgba(0,0,0,${0.4 + dmg * 0.5})`;
-      ctx.lineWidth = 1.4;
-      ctx.lineCap = 'round';
+      cx.strokeStyle = `rgba(0,0,0,${0.4 + dmg * 0.5})`;
+      cx.lineWidth = 1.4;
+      cx.lineCap = 'round';
       const cracks = Math.floor(dmg * 5);
       for (let i = 0; i < cracks; i++) {
         const a = (i / cracks) * Math.PI * 2 + (i * 0.37);
         const midR = r * 0.3;
-        const endR = r * (0.85 + Math.random() * 0.1);
+        const endR = r * (0.85 + ((i * 0.137) % 0.1));
         const midX = Math.cos(a) * midR + Math.cos(a + 1.2) * r * 0.12;
         const midY = Math.sin(a) * midR + Math.sin(a + 1.2) * r * 0.12;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(midX, midY);
-        ctx.lineTo(Math.cos(a) * endR, Math.sin(a) * endR);
-        ctx.stroke();
+        cx.beginPath();
+        cx.moveTo(0, 0);
+        cx.lineTo(midX, midY);
+        cx.lineTo(Math.cos(a) * endR, Math.sin(a) * endR);
+        cx.stroke();
       }
     }
 
-    ctx.restore();
+    cx.restore();
 
-    ctx.strokeStyle = 'rgba(0,0,0,0.7)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
+    cx.strokeStyle = 'rgba(0,0,0,0.7)';
+    cx.lineWidth = 1.5;
+    cx.beginPath();
     for (let i = 0; i < this.vertices.length; i++) {
-      if (i === 0) ctx.moveTo(this.vertices[i].x, this.vertices[i].y);
-      else ctx.lineTo(this.vertices[i].x, this.vertices[i].y);
+      if (i === 0) cx.moveTo(this.vertices[i].x, this.vertices[i].y);
+      else cx.lineTo(this.vertices[i].x, this.vertices[i].y);
     }
-    ctx.closePath();
-    ctx.stroke();
+    cx.closePath();
+    cx.stroke();
 
+    return c;
+  }
+
+  draw(ctx: CanvasRenderingContext2D): void {
+    if (!this.sprite || this.spriteHp !== this.hp) {
+      this.sprite = this.buildSprite();
+      this.spriteHp = this.hp;
+    }
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotation);
+    const half = this.sprite.width * 0.5;
+    ctx.drawImage(this.sprite, -half, -half);
     ctx.rotate(-this.rotation);
+
     ctx.beginPath();
     ctx.fillStyle = 'rgba(0,0,0,0.4)';
     ctx.arc(0, 0, this.radius * 0.42, 0, Math.PI * 2);
@@ -426,6 +446,13 @@ export class AsteroidManager {
     right.vx = (cx - right.x) * 0.015;
     right.vy = 60 + Math.random() * 40;
     this.asteroids.push(left, right);
+  }
+
+  spawnFromBoss(x: number, y: number): void {
+    const a = new Asteroid(x, y, 'MED');
+    a.vx = (Math.random() - 0.5) * 30;
+    a.vy = 30 + Math.random() * 30;
+    this.asteroids.push(a);
   }
 
   notifyBossDefeated(): void {

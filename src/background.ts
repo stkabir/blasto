@@ -8,6 +8,7 @@ export interface NebulaBlob {
   radius: number;
   color: string;
   alpha: number;
+  _sprite?: HTMLCanvasElement;
 }
 
 export interface DistantBody {
@@ -17,6 +18,7 @@ export interface DistantBody {
   color: string;
   rim: string;
   speed: number;
+  _sprite?: HTMLCanvasElement;
 }
 
 export interface BackgroundState {
@@ -25,6 +27,8 @@ export interface BackgroundState {
   bodies: DistantBody[];
   gridOffset: number;
   auroraPhase: number;
+  bgGradients: Map<string, CanvasGradient>;
+  starSprites: Map<string, HTMLCanvasElement[]>;
 }
 
 export interface BackgroundTheme {
@@ -77,7 +81,26 @@ export function createBackgroundState(): BackgroundState {
     bodies.push(makeBody());
   }
 
-  return { stars, nebulas, bodies, gridOffset: 0, auroraPhase: 0 };
+  return {
+    stars,
+    nebulas,
+    bodies,
+    gridOffset: 0,
+    auroraPhase: 0,
+    bgGradients: new Map(),
+    starSprites: new Map(),
+  };
+}
+
+export function invalidateBackgroundCache(state: BackgroundState): void {
+  state.bgGradients.clear();
+  state.starSprites.clear();
+  for (const n of state.nebulas) {
+    n._sprite = undefined;
+  }
+  for (const b of state.bodies) {
+    b._sprite = undefined;
+  }
 }
 
 function makeNebula(): NebulaBlob {
@@ -137,6 +160,7 @@ export function updateBackground(state: BackgroundState, dt: number, isPlaying: 
         n.y = -n.radius;
         n.x = Math.random() * window.innerWidth;
         n.color = palette[Math.floor(Math.random() * palette.length)];
+        n._sprite = undefined;
       }
       if (n.x + n.radius < 0) n.x = window.innerWidth + n.radius;
       if (n.x - n.radius > window.innerWidth) n.x = -n.radius;
@@ -150,6 +174,7 @@ export function updateBackground(state: BackgroundState, dt: number, isPlaying: 
         b.y = -b.radius;
         b.x = Math.random() * window.innerWidth;
         b.radius = 30 + Math.random() * 80;
+        b._sprite = undefined;
       }
     }
   }
@@ -158,22 +183,38 @@ export function updateBackground(state: BackgroundState, dt: number, isPlaying: 
   state.auroraPhase += dt * 0.4 * speedMult;
 }
 
+function getCachedGradient(state: BackgroundState, key: string, build: () => CanvasGradient): CanvasGradient {
+  let g = state.bgGradients.get(key);
+  if (!g) {
+    g = build();
+    state.bgGradients.set(key, g);
+  }
+  return g;
+}
+
 export function drawBackground(ctx: CanvasRenderingContext2D, state: BackgroundState, themeId: string): void {
   const w = ctx.canvas.width;
   const h = ctx.canvas.height;
+  const sizeKey = `${w}x${h}`;
 
   if (themeId === 'aurora') {
-    const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, '#031018');
-    grad.addColorStop(0.5, '#072a2c');
-    grad.addColorStop(1, '#031018');
+    const grad = getCachedGradient(state, `aurora-bg-${sizeKey}`, () => {
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, '#031018');
+      g.addColorStop(0.5, '#072a2c');
+      g.addColorStop(1, '#031018');
+      return g;
+    });
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
     drawAuroraWaves(ctx, state, w, h);
   } else if (themeId === 'crimson') {
-    const grad = ctx.createRadialGradient(w / 2, h * 0.3, 50, w / 2, h * 0.5, Math.max(w, h));
-    grad.addColorStop(0, '#3b0a0a');
-    grad.addColorStop(1, '#0a0204');
+    const grad = getCachedGradient(state, `crimson-bg-${sizeKey}`, () => {
+      const g = ctx.createRadialGradient(w / 2, h * 0.3, 50, w / 2, h * 0.5, Math.max(w, h));
+      g.addColorStop(0, '#3b0a0a');
+      g.addColorStop(1, '#0a0204');
+      return g;
+    });
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
   }
@@ -187,19 +228,25 @@ export function drawBackground(ctx: CanvasRenderingContext2D, state: BackgroundS
   }
 
   if (themeId === 'inferno') {
-    const infernoGrad = ctx.createRadialGradient(w / 2, h * 0.35, 0, w / 2, h * 0.6, Math.max(w, h));
-    infernoGrad.addColorStop(0, '#7c2d12');
-    infernoGrad.addColorStop(0.5, '#3b0a02');
-    infernoGrad.addColorStop(1, '#0d0200');
+    const infernoGrad = getCachedGradient(state, `inferno-bg-${sizeKey}`, () => {
+      const g = ctx.createRadialGradient(w / 2, h * 0.35, 0, w / 2, h * 0.6, Math.max(w, h));
+      g.addColorStop(0, '#7c2d12');
+      g.addColorStop(0.5, '#3b0a02');
+      g.addColorStop(1, '#0d0200');
+      return g;
+    });
     ctx.fillStyle = infernoGrad;
     ctx.fillRect(0, 0, w, h);
   }
 
   if (themeId === 'paradise') {
-    const paradiseGrad = ctx.createLinearGradient(0, 0, 0, h);
-    paradiseGrad.addColorStop(0, '#042e1a');
-    paradiseGrad.addColorStop(0.5, '#065f36');
-    paradiseGrad.addColorStop(1, '#021408');
+    const paradiseGrad = getCachedGradient(state, `paradise-bg-${sizeKey}`, () => {
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, '#042e1a');
+      g.addColorStop(0.5, '#065f36');
+      g.addColorStop(1, '#021408');
+      return g;
+    });
     ctx.fillStyle = paradiseGrad;
     ctx.fillRect(0, 0, w, h);
   }
@@ -208,55 +255,116 @@ export function drawBackground(ctx: CanvasRenderingContext2D, state: BackgroundS
     drawCyberGrid(ctx, state, w, h);
   }
 
-  drawStars(ctx, state.stars, themeId);
+  drawStars(ctx, state, state.stars, themeId);
 }
 
-function drawStars(ctx: CanvasRenderingContext2D, stars: Star[], themeId: string): void {
-  const tint = themeId === 'crimson' ? '#fecaca' : themeId === 'aurora' ? '#bbf7d0' : themeId === 'inferno' ? '#fed7aa' : themeId === 'abyss' ? '#bfdbfe' : themeId === 'paradise' ? '#a7f3d0' : '#ffffff';
-  ctx.fillStyle = tint;
-  for (const star of stars) {
-    ctx.globalAlpha = star.alpha;
-    if (star.size > 1.4) {
-      ctx.shadowColor = tint;
-      ctx.shadowBlur = star.size * 3;
-    } else {
-      ctx.shadowBlur = 0;
+const STAR_SIZE_BUCKETS = [0.5, 0.9, 1.3, 1.7, 2.1];
+
+function tintForTheme(themeId: string): string {
+  return themeId === 'crimson' ? '#fecaca'
+    : themeId === 'aurora' ? '#bbf7d0'
+    : themeId === 'inferno' ? '#fed7aa'
+    : themeId === 'abyss' ? '#bfdbfe'
+    : themeId === 'paradise' ? '#a7f3d0'
+    : '#ffffff';
+}
+
+function getStarSprites(state: BackgroundState, themeId: string): HTMLCanvasElement[] {
+  const cached = state.starSprites.get(themeId);
+  if (cached) return cached;
+  const tint = tintForTheme(themeId);
+  const sprites: HTMLCanvasElement[] = STAR_SIZE_BUCKETS.map((size) => {
+    const blur = size > 1.4 ? size * 3 : 0;
+    const pad = blur + size + 2;
+    const dim = Math.ceil(pad * 2);
+    const c = document.createElement('canvas');
+    c.width = dim;
+    c.height = dim;
+    const cx = c.getContext('2d')!;
+    cx.fillStyle = tint;
+    if (blur > 0) {
+      cx.shadowColor = tint;
+      cx.shadowBlur = blur;
     }
-    ctx.beginPath();
-    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-    ctx.fill();
+    cx.beginPath();
+    cx.arc(pad, pad, size, 0, Math.PI * 2);
+    cx.fill();
+    return c;
+  });
+  state.starSprites.set(themeId, sprites);
+  return sprites;
+}
+
+function bucketIndex(size: number): number {
+  let best = 0;
+  let bestDiff = Math.abs(STAR_SIZE_BUCKETS[0] - size);
+  for (let i = 1; i < STAR_SIZE_BUCKETS.length; i++) {
+    const d = Math.abs(STAR_SIZE_BUCKETS[i] - size);
+    if (d < bestDiff) { bestDiff = d; best = i; }
   }
-  ctx.shadowBlur = 0;
+  return best;
+}
+
+function drawStars(ctx: CanvasRenderingContext2D, state: BackgroundState, stars: Star[], themeId: string): void {
+  const sprites = getStarSprites(state, themeId);
+  for (const star of stars) {
+    const sprite = sprites[bucketIndex(star.size)];
+    const half = sprite.width * 0.5;
+    ctx.globalAlpha = star.alpha;
+    ctx.drawImage(sprite, star.x - half, star.y - half);
+  }
   ctx.globalAlpha = 1;
+}
+
+function buildNebulaSprite(n: NebulaBlob): HTMLCanvasElement {
+  const dim = Math.ceil(n.radius * 2);
+  const c = document.createElement('canvas');
+  c.width = dim;
+  c.height = dim;
+  const cx = c.getContext('2d')!;
+  const g = cx.createRadialGradient(n.radius, n.radius, 0, n.radius, n.radius, n.radius);
+  g.addColorStop(0, hexA(n.color, n.alpha));
+  g.addColorStop(0.5, hexA(n.color, n.alpha * 0.5));
+  g.addColorStop(1, hexA(n.color, 0));
+  cx.fillStyle = g;
+  cx.beginPath();
+  cx.arc(n.radius, n.radius, n.radius, 0, Math.PI * 2);
+  cx.fill();
+  return c;
 }
 
 function drawNebulas(ctx: CanvasRenderingContext2D, state: BackgroundState): void {
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
   for (const n of state.nebulas) {
-    const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.radius);
-    grad.addColorStop(0, hexA(n.color, n.alpha));
-    grad.addColorStop(0.5, hexA(n.color, n.alpha * 0.5));
-    grad.addColorStop(1, hexA(n.color, 0));
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
-    ctx.fill();
+    if (!n._sprite) n._sprite = buildNebulaSprite(n);
+    ctx.drawImage(n._sprite, n.x - n.radius, n.y - n.radius);
   }
   ctx.restore();
 }
 
+function buildBodySprite(b: DistantBody): HTMLCanvasElement {
+  const dim = Math.ceil(b.radius * 2);
+  const c = document.createElement('canvas');
+  c.width = dim;
+  c.height = dim;
+  const cx = c.getContext('2d')!;
+  const g = cx.createRadialGradient(b.radius - b.radius * 0.4, b.radius - b.radius * 0.4, b.radius * 0.1, b.radius, b.radius, b.radius);
+  g.addColorStop(0, b.rim);
+  g.addColorStop(0.5, b.color);
+  g.addColorStop(1, '#000000');
+  cx.fillStyle = g;
+  cx.beginPath();
+  cx.arc(b.radius, b.radius, b.radius, 0, Math.PI * 2);
+  cx.fill();
+  return c;
+}
+
 function drawDistantBodies(ctx: CanvasRenderingContext2D, state: BackgroundState): void {
+  ctx.globalAlpha = 0.5;
   for (const b of state.bodies) {
-    const grad = ctx.createRadialGradient(b.x - b.radius * 0.4, b.y - b.radius * 0.4, b.radius * 0.1, b.x, b.y, b.radius);
-    grad.addColorStop(0, b.rim);
-    grad.addColorStop(0.5, b.color);
-    grad.addColorStop(1, '#000000');
-    ctx.fillStyle = grad;
-    ctx.globalAlpha = 0.5;
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-    ctx.fill();
+    if (!b._sprite) b._sprite = buildBodySprite(b);
+    ctx.drawImage(b._sprite, b.x - b.radius, b.y - b.radius);
   }
   ctx.globalAlpha = 1;
 }
@@ -302,9 +410,12 @@ function drawAuroraWaves(ctx: CanvasRenderingContext2D, state: BackgroundState, 
     }
     ctx.lineTo(w, h);
     ctx.closePath();
-    const grad = ctx.createLinearGradient(0, h * 0.3, 0, h);
-    grad.addColorStop(0, hexA(colors[i], 0.25));
-    grad.addColorStop(1, hexA(colors[i], 0));
+    const grad = getCachedGradient(state, `aurora-wave-${i}-${h}`, () => {
+      const g = ctx.createLinearGradient(0, h * 0.3, 0, h);
+      g.addColorStop(0, hexA(colors[i], 0.25));
+      g.addColorStop(1, hexA(colors[i], 0));
+      return g;
+    });
     ctx.fillStyle = grad;
     ctx.fill();
   }
@@ -350,6 +461,3 @@ export function updateStarfield(stars: Star[], dt: number, isPlaying: boolean, s
   }
 }
 
-export function drawStarfield(ctx: CanvasRenderingContext2D, stars: Star[]): void {
-  drawStars(ctx, stars, 'starfield');
-}

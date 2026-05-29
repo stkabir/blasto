@@ -1,8 +1,10 @@
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
 interface BlastoAdMobNative {
   initialize(options: { appId: string }): Promise<{ value: boolean }>;
-  showBanner(options: { adId?: string }): Promise<{ value: boolean }>;
+  showBanner(options?: { adId?: string }): Promise<{ value: boolean }>;
   hideBanner(): Promise<{ value: boolean }>;
-  prepareRewardVideoAd(options: { adId?: string }): Promise<{ value: boolean }>;
+  prepareRewardVideoAd(options?: { adId?: string }): Promise<{ value: boolean }>;
   showRewardVideoAd(): Promise<{ value: boolean }>;
   addListener(eventName: string, listenerFunc: (info: any) => void): { remove: () => void };
   removeAllListeners?(): void;
@@ -13,48 +15,30 @@ const AD_UNIT_IDS = {
   banner: 'ca-app-pub-2603532225773045/1397910983',
 };
 
-let plugin: BlastoAdMobNative | null = null;
+const BlastoAdMobPlugin = registerPlugin<BlastoAdMobNative>('BlastoAdMob');
+
 let initialized = false;
-let rewardAdLoaded = false;
 
 function getPlugin(): BlastoAdMobNative | null {
-  if (plugin) return plugin;
-  try {
-    if (typeof (window as any).Capacitor !== 'undefined') {
-      const { Capacitor } = window as any;
-      const plugins = Capacitor.Plugins || {};
-      if (plugins.BlastoAdMob) {
-        plugin = plugins.BlastoAdMob as BlastoAdMobNative;
-        return plugin;
-      }
-    }
-  } catch { }
-  return null;
+  if (!Capacitor.isNativePlatform()) return null;
+  return BlastoAdMobPlugin;
 }
 
 export function isNative(): boolean {
-  return getPlugin() !== null;
+  return Capacitor.isNativePlatform();
 }
 
 export async function initAds(): Promise<void> {
   const p = getPlugin();
   if (!p || initialized) return;
-
-  try {
-    initialized = true;
-    preloadRewardAd();
-  } catch (e) {
-    console.warn('[Ads] Init failed:', e);
-  }
+  initialized = true;
+  try { await p.prepareRewardVideoAd({ adId: AD_UNIT_IDS.reward }); } catch { }
 }
 
 export async function preloadBanner(): Promise<void> {
   const p = getPlugin();
   if (!p) return;
-
-  try {
-    await p.showBanner({ adId: AD_UNIT_IDS.banner });
-  } catch { }
+  try { await p.showBanner({ adId: AD_UNIT_IDS.banner }); } catch { }
 }
 
 export async function hideBanner(): Promise<void> {
@@ -69,16 +53,12 @@ export async function showBanner(): Promise<void> {
   try { await p.showBanner({ adId: AD_UNIT_IDS.banner }); } catch { }
 }
 
-export async function preloadRewardAd(): Promise<void> {
+async function preloadRewardAd(): Promise<void> {
   const p = getPlugin();
   if (!p) return;
-
   try {
     await p.prepareRewardVideoAd({ adId: AD_UNIT_IDS.reward });
-    rewardAdLoaded = true;
-  } catch {
-    rewardAdLoaded = false;
-  }
+  } catch { }
 }
 
 export interface RewardAdResult {
@@ -93,31 +73,38 @@ export function showRewardAd(onResult: (result: RewardAdResult) => void): void {
   }
 
   let resolved = false;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  const rewardedListener = p.addListener('onRewarded', () => {
-    if (resolved) return;
-    resolved = true;
+  const cleanup = () => {
+    if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
     rewardedListener.remove();
     closedListener.remove();
-    onResult({ rewarded: true });
-    preloadRewardAd();
-  });
+    failedListener.remove();
+    showingListener.remove();
+  };
 
-  const closedListener = p.addListener('onRewardedVideoAdClosed', () => {
+  const finish = (rewarded: boolean) => {
     if (resolved) return;
     resolved = true;
-    rewardedListener.remove();
-    closedListener.remove();
-    onResult({ rewarded: false });
+    cleanup();
+    onResult({ rewarded });
     preloadRewardAd();
+  };
+
+  const rewardedListener = p.addListener('onRewarded', () => finish(true));
+  const closedListener = p.addListener('onRewardedVideoAdClosed', () => finish(false));
+  const failedListener = p.addListener('onRewardedVideoAdFailedToLoad', () => finish(false));
+  const showingListener = p.addListener('onRewardedVideoAdShowing', () => {
+    if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
   });
 
-  p.showRewardVideoAd().catch(() => {
-    if (resolved) return;
-    resolved = true;
-    rewardedListener.remove();
-    closedListener.remove();
-    onResult({ rewarded: true });
-    preloadRewardAd();
-  });
+  timeoutId = setTimeout(() => finish(false), 15000);
+
+  (async () => {
+    try {
+      await p.showRewardVideoAd();
+    } catch {
+      finish(false);
+    }
+  })();
 }

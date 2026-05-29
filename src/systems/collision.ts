@@ -1,4 +1,4 @@
-import { PLAYER_CONFIG, LIFE_INVULNERABILITY_DURATION } from '../core/constants.js';
+import { PLAYER_CONFIG, LIFE_INVULNERABILITY_DURATION, BOSS_POINTS_BONUS } from '../core/constants.js';
 import type { Player } from '../entities/player.js';
 import { soundManager } from './audio.js';
 import type { Asteroid } from '../entities/asteroid.js';
@@ -95,17 +95,20 @@ export function checkAllCollisions(
       `+${PLAYER_CONFIG.bulletDamage}`
     );
       if (destroyed) {
-        scoreIncrement += 500;
+        scoreIncrement += BOSS_POINTS_BONUS;
+        const bossType = bossManager.boss.type;
+        const explosionColor = bossManager.boss.getExplosionColor();
+        const shockwaveColor = bossType === 'asteroid_spawner' ? '#9ca3af' : explosionColor;
         soundManager.play('explode');
         triggerShake(effects, 12, 200);
-      const bx = bossManager.boss.x + bossManager.boss.width / 2;
-      const by = bossManager.boss.y + bossManager.boss.height / 2;
-      effects.explosions.push(createExplosion(bx, by, '#ef4444', 2.5));
-      addShockwave(effects, bx, by, '#ef4444', 240);
-      addShockwave(effects, bx, by, '#fbbf24', 180);
-      triggerFlash(effects, 0.5);
-      bossManager.boss = null;
-    }
+        const bx = bossManager.boss.x + bossManager.boss.width / 2;
+        const by = bossManager.boss.y + bossManager.boss.height / 2;
+        effects.explosions.push(createExplosion(bx, by, explosionColor, 2.5));
+        addShockwave(effects, bx, by, shockwaveColor, 240);
+        addShockwave(effects, bx, by, '#fbbf24', 180);
+        triggerFlash(effects, 0.5);
+        bossManager.boss = null;
+      }
   }
 
   const powerupType = powerUpManager.activateByShooting(player.bullets);

@@ -26,13 +26,13 @@ export const PREMIUM_BACKGROUNDS: PremiumItem[] = [
 ];
 
 export const IAP_PRODUCTS = {
-  removeAds: { id: 'removeAds', name: 'Sin anuncios', price: 2.99, desc: 'Elimina todos los anuncios para siempre' },
-  lives5: { id: 'lives5', name: '5 Vidas', price: 0.99, desc: '5 vidas extra para tus partidas' },
-  lives20: { id: 'lives20', name: '20 Vidas', price: 2.99, desc: '20 vidas extra para tus partidas' },
-  designPack: { id: 'designPack', name: 'Pack Diseños', price: 1.99, desc: '3 diseños de nave premium' },
-  bulletPack: { id: 'bulletPack', name: 'Pack Disparos', price: 1.49, desc: '2 estilos de disparo premium' },
-  bgPack: { id: 'bgPack', name: 'Pack Fondos', price: 1.49, desc: '3 fondos premium' },
-  megaPack: { id: 'megaPack', name: 'Mega Pack', price: 5.99, desc: 'Todo: sin anuncios + todos los premium' },
+  remove_ads: { id: 'remove_ads', name: 'Sin anuncios', price: 2.99, desc: 'Elimina todos los anuncios para siempre' },
+  lives_5: { id: 'lives_5', name: '5 Vidas', price: 0.99, desc: '5 vidas extra para tus partidas' },
+  lives_20: { id: 'lives_20', name: '20 Vidas', price: 2.99, desc: '20 vidas extra para tus partidas' },
+  design_pack: { id: 'design_pack', name: 'Pack Diseños', price: 1.99, desc: '3 diseños de nave premium' },
+  bullet_pack: { id: 'bullet_pack', name: 'Pack Disparos', price: 1.49, desc: '2 estilos de disparo premium' },
+  bg_pack: { id: 'bg_pack', name: 'Pack Fondos', price: 1.49, desc: '3 fondos premium' },
+  mega_pack: { id: 'mega_pack', name: 'Mega Pack', price: 5.99, desc: 'Todo: sin anuncios + todos los premium' },
 } as const;
 
 export type IAPProductId = keyof typeof IAP_PRODUCTS;
@@ -136,4 +136,30 @@ export function consumeLife(): boolean {
     return true;
   }
   return false;
+}
+
+export function grantProduct(id: IAPProductId): void {
+  switch (id) {
+    case 'remove_ads':
+      buyRemoveAds();
+      break;
+    case 'lives_5':
+      addLives(5);
+      break;
+    case 'lives_20':
+      addLives(20);
+      break;
+    case 'design_pack':
+      for (const d of PREMIUM_DESIGNS) buyDesign(d.id);
+      break;
+    case 'bullet_pack':
+      for (const b of PREMIUM_BULLETS) buyBullet(b.id);
+      break;
+    case 'bg_pack':
+      for (const bg of PREMIUM_BACKGROUNDS) buyBackground(bg.id);
+      break;
+    case 'mega_pack':
+      buyMegaPack();
+      break;
+  }
 }
