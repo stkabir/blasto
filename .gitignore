@@ -29,6 +29,3 @@ android/
 # Release signing secrets
 android/app/blasto-release.jks
 android/app/release-signing.properties
-
-# Billing plugin (local only)
-src/monetization/billing.ts
