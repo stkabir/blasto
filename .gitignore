@@ -13,6 +13,9 @@ index.dev.html
 .claude/
 .agents/
 
+# Promotional / side projects
+blasto-promo/
+
 # Documentation
 docs/
 
