@@ -1,5 +1,6 @@
 import type { TrailParticle, Explosion, ExplosionParticle, FloatingText, Announcement, SpeedLine, Shockwave } from '../core/types.js';
 import type { Player } from '../entities/player.js';
+import { getQualitySettings } from '../core/quality.js';
 
 const particlePool: ExplosionParticle[] = [];
 
@@ -45,6 +46,7 @@ export function createEffectsState(): EffectsState {
 }
 
 export function addTrailParticle(effects: EffectsState, player: Player): void {
+  if (!getQualitySettings().trailParticles) return;
   for (let i = 0; i < 3; i++) {
     if (effects.playerTrail.length >= effects.maxTrailParticles) {
       effects.playerTrail.shift();
@@ -100,6 +102,7 @@ function getTrailSprite(color: string): HTMLCanvasElement {
 }
 
 export function drawTrail(ctx: CanvasRenderingContext2D, effects: EffectsState): void {
+  if (effects.playerTrail.length === 0) return;
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   for (const p of effects.playerTrail) {
@@ -115,7 +118,8 @@ export function drawTrail(ctx: CanvasRenderingContext2D, effects: EffectsState):
 
 export function createExplosion(x: number, y: number, color: string, scale: number = 1): Explosion {
   const particles: ExplosionParticle[] = [];
-  const dotCount = Math.floor(14 * scale);
+  const particleMult = getQualitySettings().explosionParticles;
+  const dotCount = Math.floor(14 * scale * particleMult);
   for (let i = 0; i < dotCount; i++) {
     const angle = (i / dotCount) * Math.PI * 2 + Math.random() * 0.4;
     const speed = (80 + Math.random() * 120) * scale;
@@ -132,7 +136,7 @@ export function createExplosion(x: number, y: number, color: string, scale: numb
     p.rotSpeed = undefined;
     particles.push(p);
   }
-  const chunkCount = Math.floor(8 * scale);
+  const chunkCount = Math.floor(8 * scale * particleMult);
   for (let i = 0; i < chunkCount; i++) {
     const angle = Math.random() * Math.PI * 2;
     const speed = (50 + Math.random() * 90) * scale;
@@ -149,7 +153,7 @@ export function createExplosion(x: number, y: number, color: string, scale: numb
     p.decay = 1.4;
     particles.push(p);
   }
-  const sparkCount = Math.floor(10 * scale);
+  const sparkCount = Math.floor(10 * scale * particleMult);
   for (let i = 0; i < sparkCount; i++) {
     const angle = Math.random() * Math.PI * 2;
     const speed = (180 + Math.random() * 200) * scale;
@@ -170,6 +174,7 @@ export function createExplosion(x: number, y: number, color: string, scale: numb
 }
 
 export function addShockwave(effects: EffectsState, x: number, y: number, color: string, maxRadius: number = 80): void {
+  if (!getQualitySettings().shockwaves) return;
   effects.shockwaves.push({ x, y, radius: 4, maxRadius, alpha: 0.9, color });
 }
 
@@ -256,6 +261,7 @@ export function drawExplosions(ctx: CanvasRenderingContext2D, explosions: Explos
 }
 
 export function addFloatingText(floatingTexts: FloatingText[], x: number, y: number, text: string): void {
+  if (!getQualitySettings().floatingTexts) return;
   floatingTexts.push({
     x, y, text,
     alpha: 1,
@@ -395,7 +401,7 @@ export function updateFlash(effects: EffectsState, dt: number): void {
 }
 
 export function updateSpeedLines(effects: EffectsState, dt: number, speedMult: number, canvasWidth: number, canvasHeight: number): void {
-  if (speedMult <= 0.3) {
+  if (!getQualitySettings().speedLines || speedMult <= 0.3) {
     effects.speedLines = [];
     effects.speedLineTimer = 0;
     return;
@@ -431,18 +437,25 @@ export function updateSpeedLines(effects: EffectsState, dt: number, speedMult: n
 }
 
 export function drawSpeedLines(ctx: CanvasRenderingContext2D, effects: EffectsState): void {
-  for (const sl of effects.speedLines) {
-    ctx.save();
-    ctx.globalAlpha = sl.alpha;
-    ctx.strokeStyle = '#7dd3fc';
-    ctx.lineWidth = 2;
+  if (effects.speedLines.length === 0) return;
+  const lines = effects.speedLines;
+  const quality = getQualitySettings();
+  ctx.save();
+  ctx.strokeStyle = '#7dd3fc';
+  ctx.lineWidth = 2;
+  if (quality.speedLines) {
     ctx.shadowColor = '#38bdf8';
     ctx.shadowBlur = 6;
-    ctx.beginPath();
+  }
+  for (let i = 0; i < lines.length; i++) {
+    const sl = lines[i];
+    ctx.globalAlpha = sl.alpha;
     const endX = sl.x + (sl.fromRight ? -sl.length : sl.length);
+    ctx.beginPath();
     ctx.moveTo(sl.x, sl.y);
     ctx.lineTo(endX, sl.y);
     ctx.stroke();
-    ctx.restore();
   }
+  ctx.globalAlpha = 1;
+  ctx.restore();
 }

@@ -1,5 +1,6 @@
 import { ASTEROID_TYPES, SPLIT_MAP } from '../core/constants.js';
 import type { AsteroidType, AsteroidTypeKey, AsteroidVertex, PlayerBullet } from '../core/types.js';
+import { getScreenWidth, getScreenHeight } from '../core/screen.js';
 
 function mix(a: string, b: string, t: number): string {
   const pa = parseHex(a);
@@ -19,6 +20,69 @@ function parseHex(hex: string): [number, number, number] {
 interface Crater { x: number; y: number; r: number; lightAngle: number; }
 interface Vein { points: AsteroidVertex[]; }
 
+const DAMAGE_BUCKETS = 5;
+
+const DIGIT_SPRITE_CACHE = new Map<string, HTMLCanvasElement>();
+
+function getDigitSprite(digit: string, fontSize: number, strokeWidth: number): HTMLCanvasElement {
+  const key = `${digit}|${fontSize.toFixed(1)}|${strokeWidth.toFixed(1)}`;
+  const cached = DIGIT_SPRITE_CACHE.get(key);
+  if (cached) return cached;
+
+  const c = document.createElement('canvas');
+  const ctx = c.getContext('2d')!;
+  ctx.font = `bold ${fontSize}px system-ui`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const metrics = ctx.measureText(digit);
+  const width = Math.ceil(metrics.width + strokeWidth * 2 + 4);
+  const height = Math.ceil(fontSize + strokeWidth * 2 + 4);
+  c.width = width;
+  c.height = height;
+
+  ctx.font = `bold ${fontSize}px system-ui`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineWidth = strokeWidth;
+  ctx.strokeStyle = 'rgba(0,0,0,0.9)';
+  ctx.strokeText(digit, width / 2, height / 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(digit, width / 2, height / 2);
+
+  DIGIT_SPRITE_CACHE.set(key, c);
+  return c;
+}
+
+export function drawCachedNumber(ctx: CanvasRenderingContext2D, value: number, x: number, y: number, fontSize: number, strokeWidth: number = 3): void {
+  const text = String(value);
+  ctx.font = `bold ${fontSize}px system-ui`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  let totalAdvance = 0;
+  const advances: number[] = [];
+  for (const ch of text) {
+    const adv = ctx.measureText(ch).width;
+    advances.push(adv);
+    totalAdvance += adv;
+  }
+
+  let cursorX = x - totalAdvance / 2;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const sp = getDigitSprite(ch, fontSize, strokeWidth);
+    const adv = advances[i];
+    ctx.drawImage(sp, cursorX + adv * 0.5 - sp.width * 0.5, y - sp.height * 0.5);
+    cursorX += adv;
+  }
+}
+
+function getDamageBucket(hp: number, maxHp: number): number {
+  if (maxHp <= 0) return 0;
+  const damage = 1 - hp / maxHp;
+  return Math.min(DAMAGE_BUCKETS - 1, Math.floor(damage * DAMAGE_BUCKETS));
+}
+
 export class Asteroid {
   x: number;
   y: number;
@@ -35,8 +99,8 @@ export class Asteroid {
   craters: Crater[];
   veins: Vein[];
   maxHp: number;
-  sprite: HTMLCanvasElement | null = null;
-  spriteHp: number = -1;
+  private sprite: HTMLCanvasElement | null = null;
+  private spriteDamageBucket: number = -1;
 
   constructor(x: number, y: number, type: AsteroidTypeKey, vx: number | null = null, vy: number | null = null) {
     this.x = x;
@@ -127,12 +191,14 @@ export class Asteroid {
     this.y += this.vy * speedMod * dt;
     this.rotation += this.rotationSpeed * dt;
 
-    if (this.y > window.innerHeight + this.radius * 2) return false;
-    if (this.x < -this.radius * 2 || this.x > window.innerWidth + this.radius * 2) return false;
+    const w = getScreenWidth();
+    const h = getScreenHeight();
+    if (this.y > h + this.radius * 2) return false;
+    if (this.x < -this.radius * 2 || this.x > w + this.radius * 2) return false;
     return true;
   }
 
-  private buildSprite(): HTMLCanvasElement {
+  private buildSprite(damageBucket: number): HTMLCanvasElement {
     const r = this.radius;
     const pad = Math.ceil(r * 1.2);
     const dim = pad * 2;
@@ -141,6 +207,7 @@ export class Asteroid {
     c.height = dim;
     const cx = c.getContext('2d')!;
     cx.translate(pad, pad);
+    const dmg = damageBucket / (DAMAGE_BUCKETS - 1 || 1);
 
     const palette = {
       base: this.type.color,
@@ -222,12 +289,11 @@ export class Asteroid {
       cx.globalAlpha = 1;
     }
 
-    const dmg = 1 - this.hp / this.maxHp;
-    if (dmg > 0.15) {
+    if (damageBucket > 0) {
       cx.strokeStyle = `rgba(0,0,0,${0.4 + dmg * 0.5})`;
       cx.lineWidth = 1.4;
       cx.lineCap = 'round';
-      const cracks = Math.floor(dmg * 5);
+      const cracks = Math.max(1, Math.floor(dmg * 5));
       for (let i = 0; i < cracks; i++) {
         const a = (i / cracks) * Math.PI * 2 + (i * 0.37);
         const midR = r * 0.3;
@@ -258,9 +324,10 @@ export class Asteroid {
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    if (!this.sprite || this.spriteHp !== this.hp) {
-      this.sprite = this.buildSprite();
-      this.spriteHp = this.hp;
+    const damageBucket = getDamageBucket(this.hp, this.maxHp);
+    if (!this.sprite || this.spriteDamageBucket !== damageBucket) {
+      this.sprite = this.buildSprite(damageBucket);
+      this.spriteDamageBucket = damageBucket;
     }
 
     ctx.save();
@@ -268,21 +335,13 @@ export class Asteroid {
     ctx.rotate(this.rotation);
     const half = this.sprite.width * 0.5;
     ctx.drawImage(this.sprite, -half, -half);
-    ctx.rotate(-this.rotation);
 
     ctx.beginPath();
     ctx.fillStyle = 'rgba(0,0,0,0.4)';
     ctx.arc(0, 0, this.radius * 0.42, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.font = `bold ${this.radius * 0.65}px system-ui`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = 'rgba(0,0,0,0.9)';
-    ctx.strokeText(String(this.hp), 0, 0);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(String(this.hp), 0, 0);
+    drawCachedNumber(ctx, this.hp, 0, 0, this.radius * 0.65, 3);
 
     ctx.restore();
   }
@@ -364,6 +423,7 @@ export class AsteroidManager {
   warmupActive: boolean = false;
   private waitingForBoss: boolean = false;
   private spawnGeneration: number = 0;
+  private spawnTimeouts: number[] = [];
 
   onPhaseStart: ((wave: number, phase: number) => void) | null = null;
   onWaveComplete: ((wave: number) => void) | null = null;
@@ -372,9 +432,11 @@ export class AsteroidManager {
   onPauseStart: ((isWaveEnd: boolean, duration: number, waveBeforePause: number) => void) | null = null;
 
   update(dt: number, frozen: boolean): void {
-    for (let i = this.asteroids.length - 1; i >= 0; i--) {
-      if (!this.asteroids[i].update(dt, frozen)) {
-        this.asteroids.splice(i, 1);
+    const asteroids = this.asteroids;
+    for (let i = asteroids.length - 1; i >= 0; i--) {
+      if (!asteroids[i].update(dt, frozen)) {
+        asteroids[i] = asteroids[asteroids.length - 1];
+        asteroids.pop();
       }
     }
 
@@ -415,6 +477,7 @@ export class AsteroidManager {
   }
 
   startWaveSystem(): void {
+    this.cancelPendingSpawns();
     this.currentWave = 0;
     this.currentPhase = 0;
     this.targetPhase = 1;
@@ -422,10 +485,12 @@ export class AsteroidManager {
     this.waveSystemActive = true;
     this.warmupActive = false;
     this.waitingForBoss = false;
+    this.spawnGeneration = 0;
     this.startPhase(1);
   }
 
   jumpToWave(wave: number): void {
+    this.cancelPendingSpawns();
     this.currentWave = wave;
     this.currentPhase = 0;
     this.targetPhase = 1;
@@ -504,11 +569,12 @@ export class AsteroidManager {
   }
 
   private spawnTypes(types: AsteroidTypeKey[]): void {
+    this.cancelPendingSpawns();
     const delay = Math.max(200, 600 - this.currentWave * 10);
     const gen = ++this.spawnGeneration;
 
     types.forEach((type, i) => {
-      setTimeout(() => {
+      const id = window.setTimeout(() => {
         if (!this.waveSystemActive || gen !== this.spawnGeneration) return;
         const x = 40 + Math.random() * (window.innerWidth - 80);
         const y = -30 - Math.random() * 40;
@@ -517,7 +583,15 @@ export class AsteroidManager {
         a.vy = Math.abs(a.vy) || 50 + Math.random() * 40;
         this.asteroids.push(a);
       }, i * delay);
+      this.spawnTimeouts.push(id);
     });
+  }
+
+  cancelPendingSpawns(): void {
+    for (const id of this.spawnTimeouts) {
+      window.clearTimeout(id);
+    }
+    this.spawnTimeouts.length = 0;
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -527,9 +601,13 @@ export class AsteroidManager {
   checkBulletCollision(bullets: PlayerBullet[]): { asteroid: Asteroid; bullet: PlayerBullet; index: number } | null {
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i];
+      const br = b.radius;
       for (let j = this.asteroids.length - 1; j >= 0; j--) {
         const a = this.asteroids[j];
-        if (Math.hypot(b.x - a.x, b.y - a.y) < a.radius) {
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const r = a.radius + br;
+        if (dx * dx + dy * dy < r * r) {
           bullets.splice(i, 1);
           return { asteroid: a, bullet: b, index: j };
         }
@@ -551,6 +629,7 @@ export class AsteroidManager {
   }
 
   clear(): void {
+    this.cancelPendingSpawns();
     this.asteroids = [];
     this.currentWave = 0;
     this.currentPhase = 0;

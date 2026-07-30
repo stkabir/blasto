@@ -1,5 +1,7 @@
 import { PLAYER_CONFIG, PLAYER_DESIGNS, BULLET_STYLES } from '../core/constants.js';
 import type { PlayerBullet, Rocket, GameInput } from '../core/types.js';
+import { getQualitySettings } from '../core/quality.js';
+import { getScreenWidth, getScreenHeight } from '../core/screen.js';
 import type { AsteroidManager } from './asteroid.js';
 
 const bulletSpriteCache = new Map<string, HTMLCanvasElement>();
@@ -56,6 +58,31 @@ function getPlasmaSprite(color: string, radius: number): HTMLCanvasElement {
   return c;
 }
 
+const BULLET_POOL_CAPACITY = 80;
+const bulletPool: PlayerBullet[] = [];
+
+function createBullet(): PlayerBullet {
+  return { x: 0, y: 0, vx: 0, vy: 0, radius: 0 };
+}
+
+function acquireBullet(): PlayerBullet {
+  return bulletPool.pop() ?? createBullet();
+}
+
+function releaseBullet(b: PlayerBullet): void {
+  if (bulletPool.length < BULLET_POOL_CAPACITY) {
+    bulletPool.push(b);
+  }
+}
+
+function resetBullet(b: PlayerBullet, x: number, y: number, vx: number, vy: number, radius: number): void {
+  b.x = x;
+  b.y = y;
+  b.vx = vx;
+  b.vy = vy;
+  b.radius = radius;
+}
+
 export class Player {
   x: number;
   y: number;
@@ -105,9 +132,10 @@ export class Player {
 
   update(dt: number, keys: GameInput, frozen: boolean, hasTripleActive: boolean): void {
     const speed = PLAYER_CONFIG.speed;
+    const w = getScreenWidth();
 
     if (keys.touchX !== null) {
-      this.x = Math.max(this.radius, Math.min(window.innerWidth - this.radius, keys.touchX));
+      this.x = Math.max(this.radius, Math.min(w - this.radius, keys.touchX));
     } else {
       if (keys.left) {
         this.x -= speed * dt;
@@ -115,7 +143,7 @@ export class Player {
       if (keys.right) {
         this.x += speed * dt;
       }
-      this.x = Math.max(this.radius, Math.min(window.innerWidth - this.radius, this.x));
+      this.x = Math.max(this.radius, Math.min(w - this.radius, this.x));
     }
 
     this.targetX = this.x;
@@ -137,14 +165,9 @@ export class Player {
   }
 
   fireNormal(): void {
-    this.bullets.push({
-      x: this.x,
-      y: this.y,
-      vx: 0,
-      vy: -PLAYER_CONFIG.bulletSpeed,
-      radius: 8,
-      history: [{ x: this.x, y: this.y }],
-    });
+    const b = acquireBullet();
+    resetBullet(b, this.x, this.y, 0, -PLAYER_CONFIG.bulletSpeed, 8);
+    this.bullets.push(b);
   }
 
   fireTriple(): void {
@@ -154,18 +177,12 @@ export class Player {
       baseAngle,
       baseAngle + Math.PI / 15,
     ];
+    const speed = PLAYER_CONFIG.bulletSpeed;
 
     for (const angle of angles) {
-      const vx = Math.cos(angle) * PLAYER_CONFIG.bulletSpeed;
-      const vy = Math.sin(angle) * PLAYER_CONFIG.bulletSpeed;
-      this.bullets.push({
-        x: this.x,
-        y: this.y,
-        vx,
-        vy,
-        radius: 6,
-        history: [{ x: this.x, y: this.y }],
-      });
+      const b = acquireBullet();
+      resetBullet(b, this.x, this.y, Math.cos(angle) * speed, Math.sin(angle) * speed, 6);
+      this.bullets.push(b);
     }
   }
 
@@ -184,16 +201,19 @@ export class Player {
   }
 
   updateBullets(dt: number): void {
-    for (let i = this.bullets.length - 1; i >= 0; i--) {
-      const b = this.bullets[i];
+    const bullets = this.bullets;
+    const w = getScreenWidth();
+    const h = getScreenHeight();
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b = bullets[i];
       b.x += b.vx * dt;
       b.y += b.vy * dt;
-      b.history.push({ x: b.x, y: b.y });
-      if (b.history.length > 6) b.history.shift();
 
-      if (b.y < -20 || b.y > window.innerHeight + 20 ||
-          b.x < -20 || b.x > window.innerWidth + 20) {
-        this.bullets.splice(i, 1);
+      if (b.y < -20 || b.y > h + 20 ||
+          b.x < -20 || b.x > w + 20) {
+        bullets[i] = bullets[bullets.length - 1];
+        bullets.pop();
+        releaseBullet(b);
       }
     }
   }
@@ -233,21 +253,8 @@ export class Player {
   }
 
   drawBullet(ctx: CanvasRenderingContext2D, b: PlayerBullet, color: string): void {
+    const shadowsEnabled = getQualitySettings().bulletShadows;
     ctx.save();
-
-    if (b.history.length > 1 && this.bulletStyle !== 'beam' && this.bulletStyle !== 'elongated') {
-      ctx.strokeStyle = color;
-      ctx.lineCap = 'round';
-      ctx.lineWidth = b.radius * 0.9;
-      ctx.globalAlpha = 0.18;
-      ctx.beginPath();
-      ctx.moveTo(b.history[0].x, b.history[0].y);
-      for (let i = 1; i < b.history.length; i++) {
-        ctx.lineTo(b.history[i].x, b.history[i].y);
-      }
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
 
     switch (this.bulletStyle) {
       case 'glow': {
@@ -263,8 +270,10 @@ export class Player {
         const tx = b.x - (b.vx / speed) * len;
         const ty = b.y - (b.vy / speed) * len;
 
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 14;
+        if (shadowsEnabled) {
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 14;
+        }
         ctx.strokeStyle = color;
         ctx.lineWidth = 5;
         ctx.lineCap = 'round';
@@ -288,8 +297,10 @@ export class Player {
       }
 
       case 'beam':
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 18;
+        if (shadowsEnabled) {
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 18;
+        }
         ctx.strokeStyle = color;
         ctx.lineWidth = 6;
         ctx.lineCap = 'round';
@@ -310,8 +321,10 @@ export class Player {
 
       case 'spark': {
         const t = Date.now() / 60;
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 14;
+        if (shadowsEnabled) {
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 14;
+        }
         for (let s = 0; s < 5; s++) {
           const angle = t + (s / 5) * Math.PI * 2;
           const dist = 6 + Math.sin(t * 4 + s) * 3;
@@ -333,8 +346,10 @@ export class Player {
 
       case 'vortex': {
         const t = Date.now() / 100;
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 16;
+        if (shadowsEnabled) {
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 16;
+        }
         for (let s = 0; s < 3; s++) {
           const angle = t * 3 + (s / 3) * Math.PI * 2;
           const dist = 8 + Math.sin(t * 6 + s) * 4;

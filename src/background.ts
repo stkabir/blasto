@@ -1,4 +1,5 @@
 import type { Star } from './core/types.js';
+import { getQualitySettings } from './core/quality.js';
 
 export interface NebulaBlob {
   x: number;
@@ -196,8 +197,9 @@ export function drawBackground(ctx: CanvasRenderingContext2D, state: BackgroundS
   const w = ctx.canvas.width;
   const h = ctx.canvas.height;
   const sizeKey = `${w}x${h}`;
+  const quality = getQualitySettings();
 
-  if (themeId === 'aurora') {
+  if (themeId === 'aurora' && quality.aurora) {
     const grad = getCachedGradient(state, `aurora-bg-${sizeKey}`, () => {
       const g = ctx.createLinearGradient(0, 0, 0, h);
       g.addColorStop(0, '#031018');
@@ -219,11 +221,11 @@ export function drawBackground(ctx: CanvasRenderingContext2D, state: BackgroundS
     ctx.fillRect(0, 0, w, h);
   }
 
-  if (themeId === 'nebula' || themeId === 'deep' || themeId === 'aurora' || themeId === 'crimson' || themeId === 'inferno' || themeId === 'abyss' || themeId === 'paradise') {
+  if (quality.nebulas && (themeId === 'nebula' || themeId === 'deep' || themeId === 'aurora' || themeId === 'crimson' || themeId === 'inferno' || themeId === 'abyss' || themeId === 'paradise')) {
     drawNebulas(ctx, state);
   }
 
-  if (themeId === 'deep' || themeId === 'abyss') {
+  if (quality.distantBodies && (themeId === 'deep' || themeId === 'abyss')) {
     drawDistantBodies(ctx, state);
   }
 
@@ -251,11 +253,11 @@ export function drawBackground(ctx: CanvasRenderingContext2D, state: BackgroundS
     ctx.fillRect(0, 0, w, h);
   }
 
-  if (themeId === 'grid') {
+  if (quality.cyberGrid && themeId === 'grid') {
     drawCyberGrid(ctx, state, w, h);
   }
 
-  drawStars(ctx, state, state.stars, themeId);
+  drawStars(ctx, state, state.stars, themeId, quality.starCount);
 }
 
 const STAR_SIZE_BUCKETS = [0.5, 0.9, 1.3, 1.7, 2.1];
@@ -305,9 +307,11 @@ function bucketIndex(size: number): number {
   return best;
 }
 
-function drawStars(ctx: CanvasRenderingContext2D, state: BackgroundState, stars: Star[], themeId: string): void {
+function drawStars(ctx: CanvasRenderingContext2D, state: BackgroundState, stars: Star[], themeId: string, maxCount?: number): void {
   const sprites = getStarSprites(state, themeId);
-  for (const star of stars) {
+  const count = Math.min(stars.length, maxCount ?? stars.length);
+  for (let i = 0; i < count; i++) {
+    const star = stars[i];
     const sprite = sprites[bucketIndex(star.size)];
     const half = sprite.width * 0.5;
     ctx.globalAlpha = star.alpha;

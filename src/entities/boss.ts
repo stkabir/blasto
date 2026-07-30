@@ -2,6 +2,8 @@ import { BOSS_TYPES, getBossHP } from '../core/constants.js';
 import type { BossTypeConfig } from '../core/constants.js';
 import type { BossTypeKey, BossBullet, PlayerBullet } from '../core/types.js';
 import type { Player } from './player.js';
+import { drawCachedNumber } from './asteroid.js';
+import { getScreenWidth, getScreenHeight } from '../core/screen.js';
 
 const BOSS_ANNOUNCEMENTS: Record<BossTypeKey, { text: string; color: string; fontSize: number }> = {
   horizontal:        { text: '¡JEFE!', color: '#ef4444', fontSize: 80 },
@@ -32,6 +34,11 @@ export class Boss {
   active: boolean;
   spawnAsteroidCb: ((x: number, y: number) => void) | null = null;
   private wobblePhase: number;
+  // Geometría cacheada para asteroid_spawner.
+  private spawnerOuterPath: Path2D | null = null;
+  private spawnerInnerPath: Path2D | null = null;
+  private spawnerRays: number[] | null = null;
+  private spawnerRadius: number = 0;
 
   constructor(type: BossTypeKey, wave: number) {
     const config = BOSS_TYPES[type];
@@ -57,12 +64,45 @@ export class Boss {
       case 'asteroid_spawner':
         this.x = window.innerWidth / 2 - this.width / 2;
         this.y = window.innerHeight / 2 - this.height / 2;
+        this.buildSpawnerGeometry(config.radius || 60);
         break;
       case 'stationary':
         this.x = window.innerWidth / 2 - this.width / 2;
         this.y = 100;
         break;
     }
+  }
+
+  private buildSpawnerGeometry(r: number): void {
+    const points = 20;
+    const jag = 0.06;
+    const outer = new Path2D();
+    const inner = new Path2D();
+    for (let i = 0; i < points; i++) {
+      const angle = (i / points) * Math.PI * 2;
+      const seed = Math.sin(i * 7.3 + 2.1) * 0.5 + 0.5;
+      const rr = r * (1 - jag + seed * jag * 2);
+      const ox = Math.cos(angle) * rr;
+      const oy = Math.sin(angle) * rr;
+      const ix = ox * 0.6 + r * 0.15;
+      const iy = oy * 0.6 + r * 0.15;
+      if (i === 0) {
+        outer.moveTo(ox, oy);
+        inner.moveTo(ix, iy);
+      } else {
+        outer.lineTo(ox, oy);
+        inner.lineTo(ix, iy);
+      }
+    }
+    outer.closePath();
+    inner.closePath();
+    this.spawnerOuterPath = outer;
+    this.spawnerInnerPath = inner;
+    this.spawnerRays = [];
+    for (let i = 0; i < 5; i++) {
+      this.spawnerRays.push(Math.PI * 0.25 + i * Math.PI * 0.4);
+    }
+    this.spawnerRadius = r;
   }
 
   get config(): BossTypeConfig {
@@ -75,14 +115,16 @@ export class Boss {
 
   update(dt: number, player: Player | null): void {
     const config = this.config;
+    const w = getScreenWidth();
+    const h = getScreenHeight();
 
     switch (this.type) {
       case 'horizontal':
       case 'pattern':
         this.x += config.speed * this.direction * dt;
-        if (this.x > window.innerWidth + this.width) {
+        if (this.x > w + this.width) {
           this.direction = -1;
-          this.x = window.innerWidth + this.width;
+          this.x = w + this.width;
         } else if (this.x < -this.width * 2) {
           this.direction = 1;
           this.x = -this.width * 2;
@@ -93,7 +135,7 @@ export class Boss {
         this.y += this.direction * config.speed * dt;
         this.wobblePhase += dt * 1.5;
         this.x += Math.sin(this.wobblePhase) * 15 * dt;
-        if (this.y + this.height > window.innerHeight * 0.6) {
+        if (this.y + this.height > h * 0.6) {
           this.direction = -1;
         } else if (this.y < 50) {
           this.direction = 1;
@@ -104,16 +146,18 @@ export class Boss {
         break;
     }
 
-    for (let i = this.bullets.length - 1; i >= 0; i--) {
-      const b = this.bullets[i];
+    const bullets = this.bullets;
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b = bullets[i];
       if (b.vx !== undefined && b.vy !== undefined) {
         b.x += b.vx * dt;
         b.y += b.vy * dt;
       } else {
         b.y += config.bulletSpeed * dt;
       }
-      if (b.y > window.innerHeight + 20 || b.x < -20 || b.x > window.innerWidth + 20) {
-        this.bullets.splice(i, 1);
+      if (b.y > h + 20 || b.x < -20 || b.x > w + 20) {
+        bullets[i] = bullets[bullets.length - 1];
+        bullets.pop();
       }
     }
 
@@ -310,51 +354,31 @@ export class Boss {
   private drawAsteroidSpawner(ctx: CanvasRenderingContext2D): void {
     const cx = this.x + this.width / 2;
     const cy = this.y + this.height / 2;
-    const r = this.config.radius || 60;
+    const r = this.spawnerRadius || this.config.radius || 60;
+
+    if (!this.spawnerOuterPath || !this.spawnerInnerPath) {
+      // Fallback: reconstruir geometría si no se cacheó (no debería pasar).
+      this.buildSpawnerGeometry(r);
+    }
 
     ctx.save();
     ctx.translate(cx, cy);
 
-    const vertices: { x: number; y: number }[] = [];
-    const points = 20;
-    const jag = 0.06;
-    for (let i = 0; i < points; i++) {
-      const angle = (i / points) * Math.PI * 2;
-      const seed = Math.sin(i * 7.3 + 2.1) * 0.5 + 0.5;
-      const rr = r * (1 - jag + seed * jag * 2);
-      vertices.push({ x: Math.cos(angle) * rr, y: Math.sin(angle) * rr });
-    }
-
-    ctx.beginPath();
-    ctx.moveTo(vertices[0].x, vertices[0].y);
-    for (let i = 1; i < vertices.length; i++) {
-      ctx.lineTo(vertices[i].x, vertices[i].y);
-    }
-    ctx.closePath();
     ctx.fillStyle = '#0d0d0d';
-    ctx.fill();
+    ctx.fill(this.spawnerOuterPath!);
 
-    const innerVertices = vertices.map(v => ({ x: v.x * 0.6, y: v.y * 0.6 }));
     ctx.save();
-    ctx.clip();
+    ctx.clip(this.spawnerOuterPath!);
     ctx.fillStyle = 'rgba(40,40,40,0.35)';
-    ctx.beginPath();
-    for (let i = 0; i < innerVertices.length; i++) {
-      const v = innerVertices[i];
-      const dx = v.x + r * 0.15;
-      const dy = v.y + r * 0.15;
-      if (i === 0) ctx.moveTo(dx, dy);
-      else ctx.lineTo(dx, dy);
-    }
-    ctx.closePath();
-    ctx.fill();
+    ctx.fill(this.spawnerInnerPath!);
 
     ctx.strokeStyle = '#ef4444';
     ctx.lineWidth = 2.5;
     ctx.shadowColor = '#ef4444';
     ctx.shadowBlur = 10;
-    for (let i = 0; i < 5; i++) {
-      const a = Math.PI * 0.25 + i * Math.PI * 0.4;
+    const rays = this.spawnerRays!;
+    for (let i = 0; i < rays.length; i++) {
+      const a = rays[i];
       ctx.beginPath();
       ctx.moveTo(Math.cos(a) * r * 0.05, Math.sin(a) * r * 0.05);
       ctx.lineTo(Math.cos(a) * r * 0.55, Math.sin(a) * r * 0.55);
@@ -366,26 +390,13 @@ export class Boss {
 
     ctx.strokeStyle = 'rgba(80,80,80,0.6)';
     ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(vertices[0].x, vertices[0].y);
-    for (let i = 1; i < vertices.length; i++) {
-      ctx.lineTo(vertices[i].x, vertices[i].y);
-    }
-    ctx.closePath();
-    ctx.stroke();
+    ctx.stroke(this.spawnerOuterPath!);
 
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.beginPath();
     ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2);
     ctx.fill();
-    ctx.font = `bold ${r * 0.55}px system-ui`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = 'rgba(0,0,0,0.9)';
-    ctx.strokeText(String(this.hp), 0, 0);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(String(this.hp), 0, 0);
+    drawCachedNumber(ctx, this.hp, 0, 0, r * 0.55, 3);
 
     ctx.restore();
   }
@@ -466,7 +477,8 @@ export class Boss {
       const b = this.bullets[i];
       const dx = b.x - player.x;
       const dy = b.y - player.y;
-      if (Math.sqrt(dx * dx + dy * dy) < player.radius + b.radius) {
+      const r = player.radius + b.radius;
+      if (dx * dx + dy * dy < r * r) {
         this.bullets.splice(i, 1);
         return true;
       }
@@ -475,8 +487,10 @@ export class Boss {
     if (this.config.radius) {
       const cx = this.x + this.width / 2;
       const cy = this.y + this.height / 2;
-      const dist = Math.hypot(player.x - cx, player.y - cy);
-      if (dist < player.radius + this.config.radius) return true;
+      const dx = player.x - cx;
+      const dy = player.y - cy;
+      const r = player.radius + this.config.radius;
+      if (dx * dx + dy * dy < r * r) return true;
     } else {
       if (player.x > this.x && player.x < this.x + this.width &&
           player.y > this.y && player.y < this.y + this.height) {
@@ -544,18 +558,22 @@ export class BossManager {
     if (!this.boss || !this.boss.active) return null;
 
     const config = this.boss.config;
+    const br = this.boss;
 
     for (let i = bullets.length - 1; i >= 0; i--) {
       const bullet = bullets[i];
       let hit = false;
 
       if (config.radius) {
-        const cx = this.boss.x + this.boss.width / 2;
-        const cy = this.boss.y + this.boss.height / 2;
-        hit = Math.hypot(bullet.x - cx, bullet.y - cy) < config.radius;
+        const cx = br.x + br.width / 2;
+        const cy = br.y + br.height / 2;
+        const dx = bullet.x - cx;
+        const dy = bullet.y - cy;
+        const r = config.radius;
+        hit = dx * dx + dy * dy < r * r;
       } else {
-        hit = bullet.x > this.boss.x && bullet.x < this.boss.x + this.boss.width &&
-              bullet.y > this.boss.y && bullet.y < this.boss.y + this.boss.height;
+        hit = bullet.x > br.x && bullet.x < br.x + br.width &&
+              bullet.y > br.y && bullet.y < br.y + br.height;
       }
 
       if (hit) {

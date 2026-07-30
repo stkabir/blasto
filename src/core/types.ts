@@ -57,7 +57,6 @@ export interface PlayerBullet {
   vx: number;
   vy: number;
   radius: number;
-  history: Vec2[];
 }
 
 export interface Rocket {

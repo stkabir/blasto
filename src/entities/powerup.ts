@@ -1,5 +1,6 @@
 import { POWERUP_TYPES, POWERUP_SPAWN_KILLS, POWERUP_LIFE_CHANCE, POWERUP_REGULAR_CHANCE, POWERUP_HP } from '../core/constants.js';
 import type { PowerUpType, ActivePowerUp, PlayerBullet } from '../core/types.js';
+import { getScreenHeight } from '../core/screen.js';
 
 type ActivePowerUpsMap = Record<string, ActivePowerUp>;
 
@@ -60,10 +61,13 @@ export class PowerUpManager {
   }
 
   update(dt: number, frozen: boolean): void {
-    for (let i = this.powerups.length - 1; i >= 0; i--) {
-      this.powerups[i].update(dt, frozen);
-      if (this.powerups[i].y > window.innerHeight + 50) {
-        this.powerups.splice(i, 1);
+    const powerups = this.powerups;
+    const h = getScreenHeight();
+    for (let i = powerups.length - 1; i >= 0; i--) {
+      powerups[i].update(dt, frozen);
+      if (powerups[i].y > h + 50) {
+        powerups[i] = powerups[powerups.length - 1];
+        powerups.pop();
       }
     }
   }
@@ -79,7 +83,8 @@ export class PowerUpManager {
       const p = this.powerups[i];
       const dx = x - p.x;
       const dy = y - p.y;
-      if (Math.sqrt(dx * dx + dy * dy) < radius + p.radius) {
+      const r = radius + p.radius;
+      if (dx * dx + dy * dy < r * r) {
         this.powerups.splice(i, 1);
         return p.type;
       }
@@ -138,11 +143,13 @@ export class PowerUpManager {
   activateByShooting(bullets: PlayerBullet[]): PowerUpType | null {
     for (let i = this.powerups.length - 1; i >= 0; i--) {
       const p = this.powerups[i];
+      const pr = p.radius;
       for (let j = bullets.length - 1; j >= 0; j--) {
         const b = bullets[j];
         const dx = b.x - p.x;
         const dy = b.y - p.y;
-        if (Math.sqrt(dx * dx + dy * dy) < b.radius + p.radius) {
+        const r = b.radius + pr;
+        if (dx * dx + dy * dy < r * r) {
           p.hp--;
           bullets.splice(j, 1);
           if (p.hp <= 0) {

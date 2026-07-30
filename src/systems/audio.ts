@@ -1,5 +1,7 @@
 type SoundName = 'shoot' | 'hit' | 'explode' | 'powerup' | 'life' | 'gameover' | 'combo' | 'menu_click' | 'menu_back' | 'phase_up';
 
+import { getQualitySettings } from '../core/quality.js';
+
 export class SoundManager {
   private ctx: AudioContext | null = null;
   private dryGain: GainNode | null = null;
@@ -8,6 +10,7 @@ export class SoundManager {
   private enabled = true;
   private activeSounds = 0;
   private maxPolyphony = 8;
+  private noiseBuffer: AudioBuffer | null = null;
 
   private getContext(): AudioContext | null {
     if (this.ctx) return this.ctx;
@@ -17,12 +20,20 @@ export class SoundManager {
       this.dryGain.gain.value = 0.82;
       this.dryGain.connect(this.ctx.destination);
 
-      this.wetGain = this.ctx.createGain();
-      this.wetGain.gain.value = 0.18;
+      const quality = getQualitySettings();
+      this.maxPolyphony = quality.targetFps >= 60 ? 8 : 4;
 
-      this.reverb = this.createReverb(this.ctx);
-      this.reverb.connect(this.wetGain);
-      this.wetGain.connect(this.ctx.destination);
+      // Solo crear reverb y wetGain en tiers altos/medios.
+      if (quality.targetFps >= 60) {
+        this.wetGain = this.ctx.createGain();
+        this.wetGain.gain.value = 0.18;
+        this.reverb = this.createReverb(this.ctx);
+        this.reverb.connect(this.wetGain);
+        this.wetGain.connect(this.ctx.destination);
+      }
+
+      // Pre-cachear buffer de ruido reutilizable (0.6s, suficiente para la explosión más larga).
+      this.noiseBuffer = this.createNoiseBuffer(this.ctx, 0.6);
 
       return this.ctx;
     } catch {
@@ -45,14 +56,37 @@ export class SoundManager {
     return convolver;
   }
 
+  private createNoiseBuffer(ctx: AudioContext, duration: number): AudioBuffer {
+    const rate = ctx.sampleRate;
+    const length = Math.max(1, Math.floor(rate * duration));
+    const buffer = ctx.createBuffer(1, length, rate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    return buffer;
+  }
+
   private connectToMaster(node: AudioNode): void {
-    if (!this.dryGain || !this.reverb) return;
+    if (!this.dryGain) return;
     node.connect(this.dryGain);
-    node.connect(this.reverb);
+    if (this.reverb) node.connect(this.reverb);
   }
 
   setEnabled(enabled: boolean): void {
     this.enabled = enabled;
+  }
+
+  suspend(): void {
+    if (this.ctx && this.ctx.state === 'running') {
+      this.ctx.suspend();
+    }
+  }
+
+  resume(): void {
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
   }
 
   play(name: SoundName): void {
@@ -131,7 +165,7 @@ export class SoundManager {
     noise.connect(noiseFilter);
     noiseFilter.connect(noiseGain);
     this.connectToMaster(noiseGain);
-    noise.start(t);
+    noise.start(t, 0, 0.4);
     noise.stop(t + 0.45);
 
     const sub = ctx.createOscillator();
@@ -216,7 +250,7 @@ export class SoundManager {
     noise.connect(nFilter);
     nFilter.connect(nGain);
     this.connectToMaster(nGain);
-    noise.start(t);
+    noise.start(t, 0, 0.6);
     noise.stop(t + 0.65);
     setTimeout(onEnd, 850);
   }
@@ -308,21 +342,28 @@ export class SoundManager {
     noise.connect(nFilter);
     nFilter.connect(nGain);
     this.connectToMaster(nGain);
-    noise.start(t);
+    noise.start(t, 0, 0.3);
     noise.stop(t + 0.35);
     setTimeout(onEnd, notes.length * 80 + 220);
   }
 
   private createNoiseSource(ctx: AudioContext, duration: number): AudioBufferSourceNode {
-    const rate = ctx.sampleRate;
-    const length = rate * duration;
-    const buffer = ctx.createBuffer(1, length, rate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < length; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
     const source = ctx.createBufferSource();
-    source.buffer = buffer;
+    if (this.noiseBuffer) {
+      source.buffer = this.noiseBuffer;
+      // El source reproduce los primeros `duration` segundos del buffer cacheado.
+      // Si el buffer cacheado es más largo, el resto no se reproduce.
+    } else {
+      // Fallback si el buffer no se inicializó.
+      const rate = ctx.sampleRate;
+      const length = rate * duration;
+      const buffer = ctx.createBuffer(1, length, rate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < length; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      source.buffer = buffer;
+    }
     return source;
   }
 }
